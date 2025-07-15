@@ -10,8 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@cloudscape-design/components": "^3.0.1025",
+    "@cloudscape-design/global-styles": "^1.0.44",
+    "@types/react-syntax-highlighter": "^15.5.13",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "react-syntax-highlighter": "^15.6.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",

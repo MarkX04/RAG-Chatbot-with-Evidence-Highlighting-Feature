@@ -1,8 +1,11 @@
-// API service for RAG chatbot (placeholder implementation)
-
 import type { Message, DocumentSource } from '../types'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
+
+interface ChatConfig {
+  model: string
+  dataSource: string
+}
 
 export class ChatService {
   private apiKey: string | undefined
@@ -11,13 +14,15 @@ export class ChatService {
     this.apiKey = apiKey
   }
 
-  async sendMessage(message: string, conversationHistory: Message[]): Promise<{
+  async sendMessage(
+    message: string, 
+    conversationHistory: Message[], 
+    config?: ChatConfig
+  ): Promise<{
     response: string
-    sources: DocumentSource[]
+    sources?: DocumentSource[]
   }> {
-    // This is a placeholder implementation
-    // In a real app, this would call your RAG backend
-    
+
     try {
       const response = await fetch(`${API_BASE_URL}/chat`, {
         method: 'POST',
@@ -27,7 +32,9 @@ export class ChatService {
         },
         body: JSON.stringify({
           message,
-          history: conversationHistory.slice(-10) // Send last 10 messages for context
+          history: conversationHistory.slice(-10),
+          model: config?.model || 'amazon.FalconLite',
+          dataSource: config?.dataSource || 'no-workspace'
         })
       })
 
@@ -43,9 +50,8 @@ export class ChatService {
     } catch (error) {
       console.error('Error sending message:', error)
       
-      // Fallback response for development
       return {
-        response: `I received your message: "${message}". This is a placeholder response. In a real implementation, this would query a knowledge base and generate a contextual response using RAG.`,
+        response: `I received your message: "${message}". This is a placeholder response from the ${config?.model || 'default'} model. In a real implementation, this would query the ${config?.dataSource || 'knowledge base'} and generate a contextual response using RAG.`,
         sources: []
       }
     }

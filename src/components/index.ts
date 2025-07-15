@@ -1,2 +1,1 @@
-export { ChatMessage } from './ChatMessage'
-export { Loading } from './Loading'
+export { CloudscapeChatMessage } from './CloudscapeChatMessage'
