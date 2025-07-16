@@ -6,6 +6,15 @@ export interface Message {
   role: 'user' | 'assistant'
   timestamp: Date
   sources?: DocumentSource[]
+  pageReferences?: PageReference[]
+}
+
+export interface PageReference {
+  documentName: string
+  pages: {
+    pageNumber: number
+    highlights: string[]
+  }[]
 }
 
 export interface DocumentSource {

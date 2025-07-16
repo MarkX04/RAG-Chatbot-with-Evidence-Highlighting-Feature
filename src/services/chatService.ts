@@ -1,4 +1,4 @@
-import type { Message, DocumentSource } from '../types'
+import type { Message, DocumentSource, PageReference } from '../types'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
 
@@ -14,6 +14,35 @@ export class ChatService {
     this.apiKey = apiKey
   }
 
+  /**
+   * Check if backend server is running and RAG is available
+   */
+  async healthCheck(): Promise<{
+    status: string
+    vectorDbReady: boolean
+    ragAvailable: boolean
+  }> {
+    try {
+      const response = await fetch(`${API_BASE_URL.replace('/api', '')}/health`)
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      const data = await response.json()
+      return {
+        status: data.status,
+        vectorDbReady: data.vector_db_ready,
+        ragAvailable: data.rag_available
+      }
+    } catch (error) {
+      console.error('Backend health check failed:', error)
+      return {
+        status: 'error',
+        vectorDbReady: false,
+        ragAvailable: false
+      }
+    }
+  }
+
   async sendMessage(
     message: string, 
     conversationHistory: Message[], 
@@ -21,9 +50,35 @@ export class ChatService {
   ): Promise<{
     response: string
     sources?: DocumentSource[]
+    highlighted_pdfs?: string[]
+    page_references?: PageReference[]
   }> {
 
     try {
+      // First check if backend is available
+      const health = await this.healthCheck()
+      
+      if (health.status === 'error') {
+        return {
+          response: `❌ Backend server is not available. Please make sure the Python backend is running on port 3001.\n\nTo start the backend:\n1. cd backend\n2. ./setup.sh (first time only)\n3. ./run.sh`,
+          sources: []
+        }
+      }
+
+      if (!health.ragAvailable) {
+        return {
+          response: `⚠️ RAG functionality is not available. Please check backend configuration and ensure all dependencies are installed.\n\nMessage: "${message}"`,
+          sources: []
+        }
+      }
+
+      if (!health.vectorDbReady) {
+        return {
+          response: `⚠️ Knowledge base is not ready. Please upload PDF documents first to enable RAG functionality.\n\nYour question: "${message}"\n\nTo upload documents: Use the document upload feature or place PDF files in RAG-v1/data/ppl/ directory.`,
+          sources: []
+        }
+      }
+
       const response = await fetch(`${API_BASE_URL}/chat`, {
         method: 'POST',
         headers: {
@@ -33,7 +88,7 @@ export class ChatService {
         body: JSON.stringify({
           message,
           history: conversationHistory.slice(-10),
-          model: config?.model || 'amazon.FalconLite',
+          model: config?.model || 'anthropic.claude-v3-sonnet',
           dataSource: config?.dataSource || 'no-workspace'
         })
       })
@@ -45,13 +100,15 @@ export class ChatService {
       const data = await response.json()
       return {
         response: data.response,
-        sources: data.sources || []
+        sources: data.sources || [],
+        highlighted_pdfs: data.highlighted_pdfs || [],
+        page_references: data.page_references || []
       }
     } catch (error) {
       console.error('Error sending message:', error)
       
       return {
-        response: `I received your message: "${message}". This is a placeholder response from the ${config?.model || 'default'} model. In a real implementation, this would query the ${config?.dataSource || 'knowledge base'} and generate a contextual response using RAG.`,
+        response: `❌ Error connecting to RAG backend: ${error instanceof Error ? error.message : 'Unknown error'}\n\nYour message: "${message}"\n\nPlease ensure:\n1. Backend server is running (cd backend && ./run.sh)\n2. AWS credentials are configured\n3. Vector database is initialized`,
         sources: []
       }
     }
@@ -60,7 +117,7 @@ export class ChatService {
   async uploadDocument(file: File): Promise<{ success: boolean; documentId?: string }> {
     try {
       const formData = new FormData()
-      formData.append('document', file)
+      formData.append('file', file)  // Changed from 'document' to 'file'
 
       const response = await fetch(`${API_BASE_URL}/documents/upload`, {
         method: 'POST',
