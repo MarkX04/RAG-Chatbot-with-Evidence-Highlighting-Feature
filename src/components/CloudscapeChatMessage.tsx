@@ -16,6 +16,33 @@ const formatTimestamp = (date: Date): string => {
   })
 }
 
+// Function to render markdown formatting like **bold**
+const renderMarkdownText = (text: string) => {
+  const parts = []
+  const boldRegex = /\*\*(.*?)\*\*/g
+  let lastIndex = 0
+  let match
+
+  while ((match = boldRegex.exec(text)) !== null) {
+    // Add text before bold
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index))
+    }
+    
+    // Add bold text
+    parts.push(<strong key={match.index}>{match[1]}</strong>)
+    
+    lastIndex = match.index + match[0].length
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex))
+  }
+
+  return parts.length > 0 ? parts : [text]
+}
+
 const parseMessageContent = (content: string) => {
   // Debug: Log content to see what we're parsing
   console.log('Parsing content:', content)
@@ -204,17 +231,35 @@ export const CloudscapeChatMessage = ({ message, onPDFPageSelect }: ChatMessageP
   // Use actual page references from backend only
   const actualPageReferences = message.pageReferences || []
   
-  console.log('Using page references:', actualPageReferences)
-  console.log('Should show PDF selector:', message.role !== 'user' && actualPageReferences.length > 0)
+  // TEMPORARY DEBUG: Force show PDF buttons for assistant messages to test UI
+  const debugMode = false // Set to true to test UI
+  const debugPageReferences = debugMode && message.role === 'assistant' ? [
+    {
+      documentName: "MiniGo Spec 1.0.2.pdf",
+      pages: [
+        { pageNumber: 1, highlights: ["test highlight 1"] },
+        { pageNumber: 3, highlights: ["test highlight 2"] }
+      ]
+    }
+  ] : []
+  
+  const finalPageReferences = actualPageReferences.length > 0 ? actualPageReferences : debugPageReferences
+  
+  console.log('Using page references:', finalPageReferences)
+  console.log('Should show PDF selector:', message.role !== 'user' && finalPageReferences.length > 0)
   
   const parsedContent = parseMessageContent(message.content)
   const isUser = message.role === 'user'
 
   const handlePageSelect = async (documentName: string, pageNumber: number, highlights: string[]) => {
     // Call parent's PDF page select handler
-    console.log(`Selected: ${documentName}, page ${pageNumber}`, highlights)
+    console.log(`🔥 handlePageSelect called with: ${documentName}, page ${pageNumber}`, highlights)
+    console.log('onPDFPageSelect function exists:', !!onPDFPageSelect)
     if (onPDFPageSelect) {
+      console.log('✅ Calling parent onPDFPageSelect')
       onPDFPageSelect(documentName, pageNumber, highlights)
+    } else {
+      console.error('❌ onPDFPageSelect is not defined!')
     }
   }
 
@@ -289,24 +334,35 @@ export const CloudscapeChatMessage = ({ message, onPDFPageSelect }: ChatMessageP
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word'
                 }}>
-                  {part.content}
+                  {renderMarkdownText(part.content)}
                 </div>
               )
             }
           })}
           
-          {/* PDF Page Selector - hiển thị thay vì Check Ref button */}
           {(() => {
             const isUser = message.role === 'user'
-            const hasPageRefs = actualPageReferences && actualPageReferences.length > 0
-            console.log('PDF Selector Check:', { isUser, hasPageRefs, actualPageReferences })
+            const hasPageRefs = finalPageReferences && finalPageReferences.length > 0
             
-            return !isUser && hasPageRefs && (
-              <PDFPageSelector 
-                references={actualPageReferences}
-                onPageSelect={handlePageSelect}
-              />
-            )
+            console.log('=== PDF Selector Debug ===')
+            console.log('isUser:', isUser)
+            console.log('hasPageRefs:', hasPageRefs)
+            console.log('finalPageReferences:', finalPageReferences)
+            console.log('message.role:', message.role)
+            console.log('Will render PDF selector:', !isUser && hasPageRefs)
+            
+            if (!isUser && hasPageRefs) {
+              console.log('✅ Rendering PDFPageSelector with:', finalPageReferences)
+              return (
+                <PDFPageSelector 
+                  references={finalPageReferences}
+                  onPageSelect={handlePageSelect}
+                />
+              )
+            } else {
+              console.log('❌ Not rendering PDFPageSelector - isUser:', isUser, 'hasPageRefs:', hasPageRefs)
+              return null
+            }
           })()}
           
           <div 
@@ -322,7 +378,6 @@ export const CloudscapeChatMessage = ({ message, onPDFPageSelect }: ChatMessageP
             <div>
               {formatTimestamp(message.timestamp)}
             </div>
-            {/* Removed Check Ref button - PDF will be shown in right panel */}
           </div>
         </div>
       </div>

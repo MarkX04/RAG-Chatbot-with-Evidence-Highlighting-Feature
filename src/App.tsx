@@ -2,8 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import {
   AppLayout,
   TopNavigation,
-  Container,
-  Header,
   SpaceBetween,
   Input,
   Button,
@@ -16,6 +14,7 @@ import { generateMessageId, isValidMessage } from './utils/helpers'
 import { chatService } from './services/chatService'
 import { CloudscapeChatMessage } from './components/CloudscapeChatMessage'
 import { DocumentUploadModal } from './components/DocumentUploadModal'
+import CanvasPDFViewer from './components/CanvasPDFViewer'
 import aws from './assets/aws.png'
 
 function App() {
@@ -29,7 +28,6 @@ function App() {
     ragAvailable: boolean
   }>({ status: 'unknown', vectorDbReady: false, ragAvailable: false })
   
-  // PDF viewer state
   const [selectedPDF, setSelectedPDF] = useState<{
     documentName: string
     pageNumber: number
@@ -39,7 +37,6 @@ function App() {
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
   
-  // Check backend status on component mount
   useEffect(() => {
     checkBackendStatus()
   }, [])
@@ -119,56 +116,57 @@ function App() {
     }
   }
 
-  // Function to navigate PDF to specific page (similar to goToPage in HTML code)
-  const navigatePDFToPage = (iframeElement: HTMLIFrameElement, newUrl: string) => {
-    // Set src to blank and then to desired src to prevent browser caching issues
-    iframeElement.src = 'about:blank'
-    setTimeout(() => {
-      iframeElement.src = newUrl
-    }, 100) // Set a slight delay to ensure the reload
-  }
-
   const handlePDFPageSelect = async (documentName: string, pageNumber: number, highlights: string[]) => {
     console.log(`Opening PDF: ${documentName}, page ${pageNumber}`)
+    console.log('Current selectedPDF:', selectedPDF)
+    console.log('Current pdfUrl:', pdfUrl)
     
-    // Set selected PDF info immediately for UI feedback
+    // Check if same document BEFORE updating state
+    const isSameDocument = pdfUrl && selectedPDF?.documentName === documentName
+    
+    console.log('🔧 Setting selectedPDF state...')
     setSelectedPDF({ documentName, pageNumber, highlights })
     
-    // Clear current PDF URL while loading new one
+    if (isSameDocument) {
+      console.log(`✨ Same document - ReactPDFViewer will navigate instantly to page ${pageNumber}`)
+      return 
+    }
+    
+    console.log(`Loading new document: ${documentName}`)
+    console.log('🔧 Checking if need to revoke existing URL...')
+    
     if (pdfUrl) {
+      console.log('🗑️ Revoking existing PDF URL:', pdfUrl)
       URL.revokeObjectURL(pdfUrl)
       setPdfUrl(null)
     }
     
+    console.log('🚀 Starting PDF fetch process...')
+    
     try {
-      // Show loading state by setting pdfUrl to null first
+      console.log('🔄 Fetching PDF from API...')
       const response = await fetch(`http://localhost:3001/api/highlighted-pdfs?page=${pageNumber}`)
+      
+      console.log('📡 API Response status:', response.status)
+      console.log('📡 API Response ok:', response.ok)
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
       
+      console.log('📄 Converting response to blob...')
       const blob = await response.blob()
+      console.log('📄 Blob size:', blob.size, 'bytes')
+      
       const url = URL.createObjectURL(blob)
+      console.log('🎯 Created object URL:', url)
       
-      // Add page parameter to URL for browser to jump to specific page
-      const pdfUrlWithPage = `${url}#page=${pageNumber}`
-      setPdfUrl(pdfUrlWithPage)
-      
-      // Use improved navigation function after a delay to ensure iframe is ready
-      setTimeout(() => {
-        const iframe = document.getElementById('pdf-viewer-iframe') as HTMLIFrameElement
-        if (iframe && pdfUrlWithPage) {
-          console.log(`Navigating PDF iframe to page ${pageNumber}`)
-          navigatePDFToPage(iframe, pdfUrlWithPage)
-        }
-      }, 300)
+      setPdfUrl(url)
+      console.log('✅ PDF URL set successfully')
       
     } catch (error) {
-      console.error('Error loading PDF:', error)
-      // Show error message or fallback
-      const fallbackUrl = `http://localhost:3001/api/highlighted-pdfs?page=${pageNumber}#page=${pageNumber}`
-      setPdfUrl(fallbackUrl)
+      console.error('❌ Error loading PDF:', error)
+      setPdfUrl(null)
     }
   }
 
@@ -182,30 +180,25 @@ function App() {
             alt: "AWS"
           }
         }}
-        utilities={[{
-          type: "menu-dropdown",
-          iconName: "user-profile",
-          items: [
-            { id: "settings", text: "Settings" },
-              { id: "support", text: "Support" },
-              { id: "signout", text: "Sign out" }
-            ]
-          }
-        ]}
       />
       
       <AppLayout
-        navigation={<div />}
+        navigationHide
+        toolsHide
         content={
-          // Two-column layout
-          <div style={{ display: 'flex', gap: '16px', minHeight: '85vh' }}>
+          // Full screen two-column layout
+          <div style={{ display: 'flex', gap: '12px', height: 'calc(100vh - 60px)' }}>
             {/* Left Column - Chat */}
-            <div style={{ flex: selectedPDF ? '1' : '1', minWidth: '400px' }}>
+            <div style={{ 
+              flex: selectedPDF ? '0 0 45%' : '1', 
+              minWidth: selectedPDF ? '500px' : '600px',
+              maxWidth: selectedPDF ? '45%' : 'none'
+            }}>
               <div style={{ 
-                height: '85vh',
+                height: '100%',
                 border: '1px solid #e9ebed',
                 borderRadius: '8px',
-                backgroundColor: '#ffffff',
+                backgroundColor: 'white',
                 display: 'flex',
                 flexDirection: 'column'
               }}>
@@ -355,23 +348,27 @@ function App() {
                   
                   <div style={{ flex: 1, overflow: 'hidden' }}>
                     {pdfUrl ? (
-                      <iframe
-                        id="pdf-viewer-iframe"
-                        src={pdfUrl}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          border: 'none'
-                        }}
-                        title={`${selectedPDF.documentName} - Page ${selectedPDF.pageNumber} Highlights`}
-                        onLoad={() => {
-                          console.log('PDF iframe loaded successfully')
-                        }}
-                      />
+                      <>
+                        {console.log('🎨 Rendering CanvasPDFViewer with pdfUrl:', pdfUrl)}
+                        <CanvasPDFViewer 
+                          pdfUrl={pdfUrl}
+                          initialPageNumber={selectedPDF.pageNumber + 1}
+                          onPageChange={(newPage) => {
+                            console.log(`🎨 Canvas PDF page changed: ${newPage}`)
+                            setSelectedPDF(prev => prev ? { 
+                              ...prev, 
+                              pageNumber: newPage - 1 
+                            } : null)
+                          }}
+                        />
+                      </>
                     ) : (
-                      <Box textAlign="center" padding="xl">
-                        <StatusIndicator type="loading">Loading PDF...</StatusIndicator>
-                      </Box>
+                      <>
+                        {console.log('⏳ No pdfUrl - showing loading...')}
+                        <Box textAlign="center" padding="xl">
+                          <StatusIndicator type="loading">Loading PDF...</StatusIndicator>
+                        </Box>
+                      </>
                     )}
                   </div>
                 </div>
@@ -379,8 +376,6 @@ function App() {
             )}
           </div>
         }
-        toolsHide
-        navigationHide
       />
 
       <DocumentUploadModal

@@ -1,9 +1,8 @@
 import argparse
 import os
 from dotenv import load_dotenv
-from langchain_chroma import Chroma
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_aws import BedrockEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain_community.embeddings import HuggingFaceEmbeddings, BedrockEmbeddings
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import ChatPromptTemplate
 from langchain_community.llms import Bedrock
@@ -14,13 +13,14 @@ import fitz  # PyMuPDF
 from rapidfuzz import fuzz
 import re
 import json
+import shutil
 import boto3
 
 # Load API key từ file .env
 load_dotenv()
 
-# client = boto3.client(service_name="bedrock-runtime",region_name="us-east-1")
-# model_id = "anthropic.claude-3-5-sonnet-20240620-v1:0"
+client = boto3.client(service_name="bedrock-runtime",region_name="us-east-1")
+model_id = "anthropic.claude-3-5-sonnet-20240620-v1:0"
 
 CHROMA_PATH = "chroma"
 
@@ -34,7 +34,7 @@ Answer the question based only on the following context:
 Answer the question based on the above context: {question}
 """
 
-def partial_highlight(pdt_path, output_path, text_to_highlight, page_number, threshold=90):
+def partial_highlight(pdt_path, output_path, text_to_highlight, page_number,file_exist, threshold=90):
     doc = fitz.open(pdt_path)
     page = doc[page_number]
     page_text = page.get_text()
@@ -53,8 +53,16 @@ def partial_highlight(pdt_path, output_path, text_to_highlight, page_number, thr
             highlight.update()
 
     print("------------------Partial highlight checking---------------")
-    doc.save(output_path, garbage=4, deflate=True)
-    doc.close()
+
+    
+    if file_exist:
+        temp_output = output_path + ".temp.pdf"
+        doc.save(temp_output, garbage=4, deflate=True, clean=True)
+        doc.close()
+        shutil.move(temp_output, output_path)
+    else:
+        doc.save(output_path, garbage=4, deflate=True, clean=True)
+        doc.close()
 
 def find_spans_fuzzy(page, target, threshold=90, buffer=10):
     spans = []
@@ -81,6 +89,16 @@ def find_spans_fuzzy(page, target, threshold=90, buffer=10):
     return spans
 
 def simple_highlight(pdf_path, output_path, text_to_highlight, page_number, threshold=90):
+    print("-----------------------------------------------------CHEKING----------------------------------------------------------------------------")
+    print(text_to_highlight)
+
+    file_exist = os.path.isfile(output_path)
+
+    print(file_exist)
+
+    if file_exist:
+        pdf_path = output_path
+
     try:
         doc = fitz.open(pdf_path)
         page = doc.load_page(page_number)
@@ -92,16 +110,24 @@ def simple_highlight(pdf_path, output_path, text_to_highlight, page_number, thre
 
         if (len(rects) == 0):
             print("Failed to highlight from LLM. CHECKING the partial highlight!")
-            partial_highlight(pdf_path,output_path,text_to_highlight,page_number,threshold=90)
+            partial_highlight(pdf_path,output_path,text_to_highlight,page_number,file_exist,threshold=90)
             return
 
         for rect in rects:
             page.add_highlight_annot(rect)
 
-        doc.save(output_path, garbage=0, deflate=True, clean=True)
+        if file_exist:
+            temp_output = output_path + ".temp.pdf"
+            doc.save(temp_output, garbage=0, deflate=True, clean=True)
+            doc.close()
+            shutil.move(temp_output, output_path)
+        else:
+            doc.save(output_path, garbage=0, deflate=True, clean=True)
+            doc.close()
         print(f"✅ Highlighted PDF saved to: {output_path}")
         return
     except Exception as e:
+        print("DANGBILOI@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
         print(e)
 
 def extract_info(resp: str):
@@ -170,23 +196,28 @@ def main():
     #     print("\n\n\n")
 
     if len(results) == 0:
-        print("Loi len = 0")
+        print("Error len == 0")
 
     # if len(results) == 0 or results[0][1] < 0.3:
     #     print("Unable to find matching results.")
     #     return
 
-    number = 1
-    for doc, score in results:
-        source = doc.metadata.get("source", None)
-        if source is None or not source.endswith(".pdf"):
-            continue
+    #number = 1
 
-        print(f"\n🔍 Highlighting evidence from: {source}")
+
+    # for doc, score in results:
+    #     source = doc.metadata.get("source", None)
+    #     if source is None or not source.endswith(".pdf"):
+    #         continue
+
+    #     print(f"\n🔍 Highlighting evidence from: {source}")
         
-        chunk_text = doc.page_content
-        output_highlighted_pdf = source.replace(".pdf", f"highlighted_{number}.pdf")
-        number += 1
+    #     chunk_text = doc.page_content
+    #     output_highlighted_pdf = source.replace(".pdf", f"highlighted_{number}.pdf")
+
+
+        #output_highlighted_pdf = source.replace(".pdf", f"highlighted_{number}.pdf")
+        #number += 1
 
         # ✅ Gọi hàm highlight mới
         # simple_highlight(
@@ -223,15 +254,6 @@ Context:
 
 Question:
 {question}
-
-FORMATTING INSTRUCTIONS:
-- If the question asks about "operator precedence", "precedence table", "operator priority", "precedence order", or similar topics, you MUST format your answer as a markdown table
-- Use this exact table format:
-  | Precedence Level | Operators | Associativity | Description |
-  |------------------|-----------|---------------|-------------|
-  | 1 (Highest) | [ ], . | Left-to-right | Array access, member access |
-  | 2 | !, - (unary) | Right-to-left | Logical NOT, unary minus |
-  | ... | ... | ... | ... |
 
 Answer format:
 "...............................(Must answer the promt based on the context given. If dont know answer that you dont have enought information)"
@@ -277,7 +299,7 @@ Answer format:
     # print(response_text)
 
 
-    print(response_text)
+    #print(response_text)
 
     answer, highlight_doc_info = extract_info(response_text)
     
@@ -288,11 +310,14 @@ Answer format:
         doc = results[id_num][0]
 
         source = doc.metadata["file_path"]
+        file_name = doc.metadata["source"]
         page_num = doc.metadata["page"]
-        print(f"Highlighting {source} page {page_num}")
         
-        # Use page number in filename for better mapping
-        output_path = f"highlight_evidence_page{page_num}_{i}.pdf"
+        print(f"🔍 Highlighting chunk {id_num} from {file_name} page {page_num}")
+        print(source)
+        
+        # Tạo 1 file output duy nhất cho tất cả highlights
+        output_path = f"highlight_evidence_{file_name}_combined.pdf"
 
         simple_highlight(
             pdf_path=source,

@@ -37,7 +37,12 @@ const PDFPageSelector: React.FC<PDFPageSelectorProps> = ({ references, onPageSel
                 <Button
                   key={pageIndex}
                   variant="primary"
-                  onClick={() => onPageSelect(doc.documentName, page.pageNumber, page.highlights)}
+                  onClick={() => {
+                    // Log the button click for debugging
+                    console.log(`🔥 PDFPageSelector button clicked: ${doc.documentName}, page ${page.pageNumber}`)
+                    console.log('onPageSelect function exists:', !!onPageSelect)
+                    onPageSelect(doc.documentName, page.pageNumber, page.highlights)
+                  }}
                 >
                   Page {page.pageNumber}
                   {page.highlights.length > 1 && (

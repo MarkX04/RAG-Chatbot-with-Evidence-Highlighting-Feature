@@ -37,10 +37,19 @@ def load_documents():
             docs = loader.load()
             for doc in docs:
                 doc.metadata["source"] = filename  # thêm tên file nếu cần
-            print("HIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
-            print(loader)
+                doc.metadata["file_path"] = path  # thêm full path để query.py sử dụng
+                # Đảm bảo page metadata được set đúng
+                if "page" not in doc.metadata:
+                    doc.metadata["page"] = 0  # default page nếu không có
+                print(f"📄 Loaded {filename} page {doc.metadata.get('page', 'unknown')}")
+            print(f"✅ Loaded {len(docs)} pages from {filename}")
             all_docs.extend(docs)
-    print(all_docs)
+    
+    print(f"📚 Total documents loaded: {len(all_docs)}")
+    # Print some metadata examples for debugging
+    for i, doc in enumerate(all_docs[:3]):
+        print(f"Sample doc {i}: page={doc.metadata.get('page')}, source={doc.metadata.get('source')}")
+    
     return all_docs
 
 

@@ -13,8 +13,12 @@
     "@cloudscape-design/components": "^3.0.1025",
     "@cloudscape-design/global-styles": "^1.0.44",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "canvas": "^3.1.2",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^5.3.93",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-pdf": "^10.0.1",
     "react-syntax-highlighter": "^15.6.1"
   },
   "devDependencies": {
