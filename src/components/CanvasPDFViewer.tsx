@@ -25,34 +25,34 @@ const CanvasPDFViewer: React.FC<CanvasPDFViewerProps> = ({
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
   const [zoomLevel, setZoomLevel] = useState<number>(0.65)
+  const [pdfjsReady, setPdfjsReady] = useState<boolean>(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const renderTaskRef = useRef<any>(null)
 
-  // Load PDF.js from CDN
+  // Check if PDF.js is ready
   useEffect(() => {
-    const loadPDFJS = async () => {
-      if (window.pdfjsLib) return;
+    const checkPDFJS = () => {
+      if (window.pdfjsLib && window.pdfjsLib.getDocument) {
+        console.log('✅ PDF.js is ready')
+        setPdfjsReady(true)
+        return
+      }
       
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-      script.onload = () => {
-        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-      };
-      document.head.appendChild(script);
-    };
+      setTimeout(checkPDFJS, 100)
+    }
     
-    loadPDFJS();
-  }, []);
+    checkPDFJS()
+  }, [])
 
   // Load PDF document
   useEffect(() => {
     console.log('🔧 CanvasPDFViewer useEffect triggered')
     console.log('📄 pdfUrl:', pdfUrl)
-    console.log('📚 window.pdfjsLib exists:', !!window.pdfjsLib)
+    console.log('📚 pdfjsReady:', pdfjsReady)
     
-    if (!pdfUrl || !window.pdfjsLib) {
-      console.log('❌ Cannot load PDF - missing URL or PDF.js')
+    if (!pdfUrl || !pdfjsReady) {
+      console.log('❌ Cannot load PDF - missing URL or PDF.js not ready')
       setPdfDoc(null)
       setLoading(false)
       return
@@ -81,7 +81,7 @@ const CanvasPDFViewer: React.FC<CanvasPDFViewerProps> = ({
     }
 
     loadPDF()
-  }, [pdfUrl])
+  }, [pdfUrl, pdfjsReady])
 
   // Render current page to canvas
   const renderPage = useCallback(async () => {

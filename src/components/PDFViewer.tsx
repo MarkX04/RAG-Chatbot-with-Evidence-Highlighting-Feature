@@ -14,7 +14,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   pdfUrl,
   message
 }) => {
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleDownload = () => {
@@ -79,10 +78,8 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
               }}
               title="Highlighted Evidence PDF"
-              onLoad={() => setLoading(false)}
               onError={() => {
                 setError('Failed to load PDF. The file might be processing or there was an error generating the highlights.');
-                setLoading(false);
               }}
             />
           </div>

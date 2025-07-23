@@ -27,7 +27,7 @@ async def get_highlighted_pdfs(page: Optional[int] = None):
     except Exception as e:
         print(f"Error finding highlighted PDF files: {e}")
 
-RAG_PATH = os.path.join(os.path.dirname(__file__), "RAG-v1")
+RAG_PATH = os.path.join(os.path.dirname(__file__), "rag_v1")
 sys.path.append(RAG_PATH)
 
 try:
@@ -442,6 +442,46 @@ def parse_query_output(output: str):
     
     print(f"📝 Initial page_references from parsing: {len(page_references)}")
     
+    # PRIORITIZE Method 0: Extract ALL pages from chunk highlighting logs FIRST
+    # This will override the incomplete results from CHECKING section
+    print("📝 Starting Method 0: Extract pages from chunk highlighting logs...")
+    chunk_page_info = {}  # doc_name -> set of pages
+    
+    for i, line in enumerate(lines):
+        # Look for chunk highlighting logs: "🔍 Highlighting chunk X from document.pdf page Y"
+        chunk_match = re.search(r'🔍 Highlighting chunk \d+ from (.+?)\.pdf page (\d+)', line)
+        if chunk_match:
+            doc_base = chunk_match.group(1)
+            page_num = int(chunk_match.group(2))
+            doc_name = f"{doc_base}.pdf"
+            
+            if doc_name not in chunk_page_info:
+                chunk_page_info[doc_name] = set()
+            chunk_page_info[doc_name].add(page_num)
+            print(f"📝 Found chunk highlighting: {doc_name} page {page_num}")
+    
+    # If we found chunk page info, use it instead of CHECKING section results
+    if chunk_page_info:
+        print("📝 Method 0 found pages - overriding CHECKING section results")
+        page_references = []  # Clear previous results
+        
+        for doc_name, page_set in chunk_page_info.items():
+            pages_list = []
+            for page_num in sorted(page_set):
+                pages_list.append({
+                    "pageNumber": page_num,
+                    "highlights": [f"Content highlighted on page {page_num}"]
+                })
+            
+            if pages_list:
+                page_references.append({
+                    "documentName": doc_name,
+                    "pages": pages_list
+                })
+                print(f"📝 Method 0 result: {doc_name} with {len(pages_list)} pages: {[p['pageNumber'] for p in pages_list]}")
+    
+    print(f"📝 After Method 0 - page_references count: {len(page_references)}")
+    
     # If no page_references from highlight parsing, extract from CHECKING section only
     if len(page_references) == 0 and checking_idx != -1:
         print("📝 No page_refs from highlights, extracting from CHECKING section...")
@@ -467,16 +507,38 @@ def parse_query_output(output: str):
                         print("📝 Skipping highlight - no source documents found")
                         continue
                         
-                    doc_name = sources[0]["title"]  # Always use first source document
+                    # Extract proper document name from source title
+                    source_title = sources[0]["title"]
                     
-                    # Extract page number from context or default to 1
-                    page_num = 1
+                    # If source title is in format "🔍 Highlighting chunk X from filename.pdf", extract filename
+                    filename_match = re.search(r'🔍 Highlighting chunk \d+ from (.+\.pdf)', source_title)
+                    if filename_match:
+                        doc_name = filename_match.group(1)
+                    else:
+                        # Look for any .pdf filename in the source title
+                        pdf_match = re.search(r'([^/\\:]+\.pdf)', source_title)
+                        if pdf_match:
+                            doc_name = pdf_match.group(1)
+                        else:
+                            doc_name = source_title  # Fallback to original title
+                    
+                    print(f"📝 Using document name: {doc_name} (from source: {source_title})")
+                    
+                    # Extract page number from source title, highlight text, or context
+                    page_num = 1  # Default
                     page_pattern = r'page\s*(\d+)|Page\s*(\d+)|trang\s*(\d+)'
                     
-                    # Search for page number in highlight text or context
-                    page_match = re.search(page_pattern, highlight_text, re.IGNORECASE)
-                    if page_match:
-                        page_num = int([g for g in page_match.groups() if g][0])
+                    # First try to extract from source title (most reliable)
+                    source_page_match = re.search(r'🔍 Highlighting chunk \d+ from .+ page (\d+)', source_title)
+                    if source_page_match:
+                        page_num = int(source_page_match.group(1))
+                        print(f"📝 Found page {page_num} from source title")
+                    else:
+                        # Fallback: search in highlight text
+                        page_match = re.search(page_pattern, highlight_text, re.IGNORECASE)
+                        if page_match:
+                            page_num = int([g for g in page_match.groups() if g][0])
+                            print(f"📝 Found page {page_num} from highlight text")
                     
                     # Add to document page mapping
                     if doc_name not in doc_page_map:
@@ -508,29 +570,29 @@ def parse_query_output(output: str):
     
     # If no page_references from highlight parsing, try to extract from output lines directly
     if len(page_references) == 0:
-        print("📝 No page_refs from JSON parsing, trying direct extraction from output...")
+        print("📝 No page_refs from previous methods, trying PDF operation logs...")
         
-        # Method 1: Extract page info from actual highlighting operations in the output
+        # Method 1: Extract page info from actual highlighting operations in the output (fallback)
         highlight_operations = {}
         
         for i, line in enumerate(lines):
-            # Look for actual highlighting operations with the new combined PDF format
-            if "✅ Highlighted PDF saved to:" in line and "_combined.pdf" in line:
-                # Extract document from filename: highlight_evidence_DocumentName_combined.pdf
-                filename_match = re.search(r'highlight_evidence_(.+?)_combined\.pdf', line)
-                if filename_match:
-                    doc_base = filename_match.group(1)
-                    # Fix double .pdf issue
-                    if doc_base.endswith('.pdf'):
-                        doc_name = doc_base
-                    else:
-                        doc_name = doc_base + ".pdf"
-                    
-                    print(f"📝 Processing highlight operation for: {doc_name}")
-                    
-                    # Initialize document entry
-                    if doc_name not in highlight_operations:
-                        highlight_operations[doc_name] = set()
+                # Look for actual highlighting operations with the new combined PDF format
+                if "✅ Highlighted PDF saved to:" in line and "_combined.pdf" in line:
+                    # Extract document from filename: highlight_evidence_DocumentName_combined.pdf
+                    filename_match = re.search(r'highlight_evidence_(.+?)_combined\.pdf', line)
+                    if filename_match:
+                        doc_base = filename_match.group(1)
+                        # Fix double .pdf issue
+                        if doc_base.endswith('.pdf'):
+                            doc_name = doc_base
+                        else:
+                            doc_name = doc_base + ".pdf"
+                        
+                        print(f"📝 Processing highlight operation for: {doc_name}")
+                        
+                        # Initialize document entry
+                        if doc_name not in highlight_operations:
+                            highlight_operations[doc_name] = set()
                     
                     # Look in a wider range before this highlight operation for page context
                     context_start = max(0, i-100)  # Much wider search window
@@ -999,7 +1061,7 @@ async def upload_document(background_tasks: BackgroundTasks, file: UploadFile = 
             )
         
         # Create data directory if it doesn't exist
-        data_dir = os.path.join(os.path.dirname(__file__), "RAG-v1", "data", "ppl")
+        data_dir = os.path.join(os.path.dirname(__file__), "rag_v1", "data", "ppl")
         os.makedirs(data_dir, exist_ok=True)
         
         # Save uploaded file
