@@ -22,7 +22,9 @@ load_dotenv()
 client = boto3.client(service_name="bedrock-runtime",region_name="us-east-1")
 model_id = "anthropic.claude-3-5-sonnet-20240620-v1:0"
 
-CHROMA_PATH = "chroma"
+BASE_DIR = os.path.dirname(__file__)
+CHROMA_PATH = os.path.join(BASE_DIR, "chroma")
+DATA_PATH   = os.path.join(BASE_DIR, "data")
 
 PROMPT_TEMPLATE = """
 Answer the question based only on the following context:
@@ -304,19 +306,23 @@ Answer format:
     answer, highlight_doc_info = extract_info(response_text)
     
 
-    for i,item in enumerate(highlight_doc_info):
-        id_num = item["chunk_id"]
+    for item in highlight_doc_info:
+        try:
+            id_num = int(item["chunk_id"])
+        except (ValueError, TypeError):
+            print(f"❌ Invalid chunk_id: {item['chunk_id']}")
+            continue
+
         text_highlight = item["highlight_text"]
-        doc = results[id_num][0]
+        doc, _ = results[id_num]  # ✅ sửa dòng này
 
         source = doc.metadata["file_path"]
         file_name = doc.metadata["source"]
         page_num = doc.metadata["page"]
-        
+    
         print(f"🔍 Highlighting chunk {id_num} from {file_name} page {page_num}")
         print(source)
-        
-        # Tạo 1 file output duy nhất cho tất cả highlights
+    
         output_path = f"highlight_evidence_{file_name}_combined.pdf"
 
         simple_highlight(

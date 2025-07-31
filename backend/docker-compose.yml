@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  chatbot-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      - PORT=8000
+      # AWS Environment Variables (set these when deploying)
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION:-us-east-1}
+      - AWS_S3_BUCKET=${AWS_S3_BUCKET}
+    volumes:
+      # Mount data directory for persistence
+      - ./RAG-v1/data:/app/RAG-v1/data
+      - ./RAG-v1/chroma:/app/RAG-v1/chroma
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Redis for session management (if needed)
+  # redis:
+  #   image: redis:7-alpine
+  #   ports:
+  #     - "6379:6379"
+  #   restart: unless-stopped
+
+networks:
+  default:
+    name: chatbot-network

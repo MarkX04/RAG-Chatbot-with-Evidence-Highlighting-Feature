@@ -6,8 +6,15 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:dev": "tsc -b && vite build --mode development",
+    "build:staging": "tsc -b && vite build --mode staging",
+    "build:prod": "tsc -b && vite build --mode production",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "./scripts/deploy.sh",
+    "deploy:dev": "ENVIRONMENT=dev ./scripts/deploy.sh",
+    "deploy:staging": "ENVIRONMENT=staging ./scripts/deploy.sh",
+    "deploy:prod": "ENVIRONMENT=prod ./scripts/deploy.sh"
   },
   "dependencies": {
     "@cloudscape-design/components": "^3.0.1025",

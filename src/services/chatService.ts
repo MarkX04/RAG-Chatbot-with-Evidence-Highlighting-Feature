@@ -1,6 +1,5 @@
 import type { Message, DocumentSource, PageReference } from '../types'
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
+import { API_ENDPOINTS } from '../config/environment'
 
 interface ChatConfig {
   model: string
@@ -23,7 +22,7 @@ export class ChatService {
     ragAvailable: boolean
   }> {
     try {
-      const response = await fetch(`${API_BASE_URL.replace('/api', '')}/health`)
+      const response = await fetch(API_ENDPOINTS.HEALTH)
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
@@ -79,7 +78,7 @@ export class ChatService {
         }
       }
 
-      const response = await fetch(`${API_BASE_URL}/chat`, {
+      const response = await fetch(API_ENDPOINTS.CHAT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -119,7 +118,7 @@ export class ChatService {
       const formData = new FormData()
       formData.append('file', file)  // Changed from 'document' to 'file'
 
-      const response = await fetch(`${API_BASE_URL}/documents/upload`, {
+      const response = await fetch(API_ENDPOINTS.UPLOAD, {
         method: 'POST',
         headers: {
           ...(this.apiKey && { 'Authorization': `Bearer ${this.apiKey}` })
@@ -141,7 +140,7 @@ export class ChatService {
 
   async searchDocuments(query: string, limit = 5): Promise<DocumentSource[]> {
     try {
-      const response = await fetch(`${API_BASE_URL}/documents/search?q=${encodeURIComponent(query)}&limit=${limit}`, {
+      const response = await fetch(`${API_ENDPOINTS.SEARCH}?q=${encodeURIComponent(query)}&limit=${limit}`, {
         headers: {
           ...(this.apiKey && { 'Authorization': `Bearer ${this.apiKey}` })
         }

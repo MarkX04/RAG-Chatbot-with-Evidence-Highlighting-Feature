@@ -15,18 +15,9 @@ import threading
 import time
 from pathlib import Path
 from io import StringIO
+os.environ["CHROMA_TELEMETRY_ENABLED"] = "false"
 
-# Add RAG-v1 to Python@app.get("/api        print(f"📄 Highlighted PDF request - page: {page}")highlighted-pdfs")
-async def get_highlighted_pdfs(page: Optional[int] = None):
-    """Return highlighted PDF files with optional page-specific selection"""
-    try:
-        print(f"📄 Highlighted PDF request - page: {page}")
-        
-        # Tìm các file highlight_evidence_*.pdf đã được tạo sẵn trong RAG-v1 directory
-        highlight_files = glob.glob(os.path.join(RAG_PATH, "highlight_evidence_*.pdf"))
-    except Exception as e:
-        print(f"Error finding highlighted PDF files: {e}")
-
+# Add rag_v1 to Python path
 RAG_PATH = os.path.join(os.path.dirname(__file__), "rag_v1")
 sys.path.append(RAG_PATH)
 
@@ -44,7 +35,7 @@ app = FastAPI(title="RAG Chatbot API", version="1.0.0")
 # Enable CORS for React frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -76,7 +67,7 @@ class HighlightedPDFRequest(BaseModel):
 # Global state
 vector_db_ready = False
 chroma_path = os.path.join(RAG_PATH, "chroma")
-data_path = os.path.join(RAG_PATH, "data", "ppl")
+data_path = os.path.join(RAG_PATH, "data")
 
 # Session management for PDF files
 chat_sessions = {}  # session_id -> {files: [], created_at: timestamp}
@@ -117,7 +108,7 @@ def call_query_py(question: str, session_id: str = None):
         if not session_id:
             session_id = str(uuid.uuid4())[:8]
         
-        # Change to RAG-v1 directory để ensure paths work correctly
+        # Change to rag_v1 directory để ensure paths work correctly
         original_cwd = os.getcwd()
         os.chdir(RAG_PATH)
         
@@ -705,7 +696,7 @@ def parse_query_output(output: str):
                         # If line mentions our document
                         if (doc_base_clean in line_clean or 
                             doc_name.replace(' ', '').lower() in line_clean or
-                            ("data/ppl" in line and doc_name in line)):
+                            ("data" in line and doc_name in line)):
                             
                             # Look for page references in this line and nearby lines
                             search_start = max(0, line_idx - 5)
@@ -771,7 +762,7 @@ def parse_query_output(output: str):
                         search_line = lines[j]
                         
                         # Look for actual document operations that indicate the page
-                        if "data/ppl/" in search_line and ".pdf" in search_line:
+                        if "data" in search_line and ".pdf" in search_line:
                             # This indicates chunk processing, now look for the page operation
                             for k in range(j, min(j + 10, len(lines))):
                                 operation_line = lines[k]
@@ -783,7 +774,7 @@ def parse_query_output(output: str):
                                         page_num = int([g for g in page_match.groups() if g][0])
                                         
                                         # Extract document name
-                                        doc_match = re.search(r'data/ppl/([^/\\:]+\.pdf)', search_line)
+                                        doc_match = re.search(r'data/([^/\\:]+\.pdf)', search_line)
                                         if doc_match:
                                             doc_name = doc_match.group(1)
                                             chunk_metadata[chunk_id] = (doc_name, page_num)
@@ -933,10 +924,10 @@ async def root():
     return {
         "message": "RAG Chatbot API is running!", 
         "vector_db_ready": vector_db_ready,
-        "endpoints": ["/chat", "/documents/upload", "/documents/search", "/health"]
+        "endpoints": ["/api/chat", "/api/documents/upload", "/api/documents/search", "/api/health"]
     }
 
-@app.get("/health")
+@app.get("/api/health")
 async def health_check():
     return {
         "status": "healthy",
@@ -1061,7 +1052,7 @@ async def upload_document(background_tasks: BackgroundTasks, file: UploadFile = 
             )
         
         # Create data directory if it doesn't exist
-        data_dir = os.path.join(os.path.dirname(__file__), "rag_v1", "data", "ppl")
+        data_dir = os.path.join(os.path.dirname(__file__), "rag_v1", "data")
         os.makedirs(data_dir, exist_ok=True)
         
         # Save uploaded file
@@ -1118,7 +1109,7 @@ async def get_highlighted_pdfs(page: Optional[int] = None):
         
         print(f"📄 Looking for existing highlighted PDFs, page filter: {page}")
         
-        # Tìm các file highlight_evidence_*.pdf đã được tạo sẵn trong RAG-v1 directory
+        # Tìm các file highlight_evidence_*.pdf đã được tạo sẵn trong rag_v1 directory
         # New format from query.py: highlight_evidence_{filename}_combined.pdf
         highlight_files = glob.glob(os.path.join(RAG_PATH, "highlight_evidence_*_combined.pdf"))
         
@@ -1213,12 +1204,12 @@ async def cleanup_highlighted_pdfs():
 if __name__ == "__main__":
     print("🚀 Starting RAG Chatbot Backend...")
     print("📚 Using your original create_db.py and query.py")
-    print("🌐 Server: http://localhost:3001")
-    print("📖 API Docs: http://localhost:3001/docs")
+    print("🌐 Server: http://localhost:8000")
+    print("📖 API Docs: http://localhost:8000/docs")
     
     try:
         import uvicorn
-        uvicorn.run(app, host="0.0.0.0", port=3001)
+        uvicorn.run(app, host="0.0.0.0", port=8000)
     except ImportError:
         print("❌ uvicorn not installed. Install with: pip install uvicorn")
     except Exception as e:

@@ -15,6 +15,7 @@ import { chatService } from './services/chatService'
 import { CloudscapeChatMessage } from './components/CloudscapeChatMessage'
 import { DocumentUploadModal } from './components/DocumentUploadModal'
 import CanvasPDFViewer from './components/CanvasPDFViewer'
+import { API_ENDPOINTS } from './config/environment'
 import aws from './assets/aws.png'
 
 function App() {
@@ -51,7 +52,7 @@ function App() {
     
     // Clean up PDF files on page load/reload
     try {
-      const response = await fetch('http://localhost:3001/api/cleanup-pdfs', {
+      const response = await fetch(API_ENDPOINTS.CLEANUP_PDFS, {
         method: 'DELETE'
       })
       if (response.ok) {
@@ -145,7 +146,7 @@ function App() {
     
     try {
       console.log('🔄 Fetching PDF from API...')
-      const response = await fetch(`http://localhost:3001/api/highlighted-pdfs?page=${pageNumber}`)
+      const response = await fetch(`${API_ENDPOINTS.HIGHLIGHTED_PDFS}?page=${pageNumber}`)
       
       console.log('📡 API Response status:', response.status)
       console.log('📡 API Response ok:', response.ok)

@@ -1,9 +1,8 @@
-from langchain_community.document_loaders import DirectoryLoader, PyMuPDFLoader
+from langchain_community.document_loaders import PyMuPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import Document
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_aws import BedrockEmbeddings
-from langchain_chroma import Chroma
+from langchain_community.embeddings import HuggingFaceEmbeddings, BedrockEmbeddings
+from langchain_community.vectorstores import Chroma
 import os
 import shutil
 from dotenv import load_dotenv
@@ -11,9 +10,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Đường dẫn
-CHROMA_PATH = "chroma"
-DATA_PATH = "data/ppl"
-
+BASE_DIR = os.path.dirname(__file__)
+CHROMA_PATH = os.path.join(BASE_DIR, "chroma")
+DATA_PATH   = os.path.join(BASE_DIR, "data")
 
 def main():
     generate_data_store()
@@ -63,14 +62,13 @@ def split_text(documents: list[Document]):
     chunks = text_splitter.split_documents(documents)
     print(f"Split {len(documents)} documents into {len(chunks)} chunks.")
 
-    document = chunks[10]
-    print(document.page_content)
-    print(document.metadata)
-
-    # for i, chunk in enumerate(chunks[:5]):
-    #     print(f"Chunk {i}")
-    #     print("Text:", chunk.page_content)
-    #     print("Metadata:", chunk.metadata)
+    if len(chunks) > 10:
+        document = chunks[10]
+        print(document.page_content[:300])
+        print(document.page_content)
+        print(document.metadata)
+    else:
+        print("⚠️ Không có đủ chunks để preview.")
 
     return chunks
 
@@ -79,6 +77,7 @@ def save_to_chroma(chunks: list[Document]):
     # Xóa vector DB cũ nếu có
     if os.path.exists(CHROMA_PATH):
         shutil.rmtree(CHROMA_PATH)
+    os.makedirs(CHROMA_PATH, exist_ok=True)
 
     # Tạo vector store mới với AWS Bedrock embeddings
     # embedding_model = HuggingFaceEmbeddings(
