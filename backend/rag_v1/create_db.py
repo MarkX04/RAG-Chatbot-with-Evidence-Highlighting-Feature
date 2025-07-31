@@ -12,7 +12,7 @@ load_dotenv()
 
 # Đường dẫn
 CHROMA_PATH = "chroma"
-DATA_PATH = "data/ppl"
+DATA_PATH = "data"
 
 
 def main():

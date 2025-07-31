@@ -705,7 +705,7 @@ def parse_query_output(output: str):
                         # If line mentions our document
                         if (doc_base_clean in line_clean or 
                             doc_name.replace(' ', '').lower() in line_clean or
-                            ("data/ppl" in line and doc_name in line)):
+                            ("data" in line and doc_name in line)):
                             
                             # Look for page references in this line and nearby lines
                             search_start = max(0, line_idx - 5)
@@ -771,7 +771,7 @@ def parse_query_output(output: str):
                         search_line = lines[j]
                         
                         # Look for actual document operations that indicate the page
-                        if "data/ppl/" in search_line and ".pdf" in search_line:
+                        if "data" in search_line and ".pdf" in search_line:
                             # This indicates chunk processing, now look for the page operation
                             for k in range(j, min(j + 10, len(lines))):
                                 operation_line = lines[k]
@@ -783,7 +783,7 @@ def parse_query_output(output: str):
                                         page_num = int([g for g in page_match.groups() if g][0])
                                         
                                         # Extract document name
-                                        doc_match = re.search(r'data/ppl/([^/\\:]+\.pdf)', search_line)
+                                        doc_match = re.search(r'data/([^/\\:]+\.pdf)', search_line)
                                         if doc_match:
                                             doc_name = doc_match.group(1)
                                             chunk_metadata[chunk_id] = (doc_name, page_num)
@@ -1061,7 +1061,7 @@ async def upload_document(background_tasks: BackgroundTasks, file: UploadFile = 
             )
         
         # Create data directory if it doesn't exist
-        data_dir = os.path.join(os.path.dirname(__file__), "rag_v1", "data", "ppl")
+        data_dir = os.path.join(os.path.dirname(__file__), "rag_v1", "data")
         os.makedirs(data_dir, exist_ok=True)
         
         # Save uploaded file
