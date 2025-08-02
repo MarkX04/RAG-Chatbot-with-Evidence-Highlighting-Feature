@@ -28,13 +28,6 @@ services:
       retries: 3
       start_period: 40s
 
-  # Optional: Redis for session management (if needed)
-  # redis:
-  #   image: redis:7-alpine
-  #   ports:
-  #     - "6379:6379"
-  #   restart: unless-stopped
-
 networks:
   default:
     name: chatbot-network

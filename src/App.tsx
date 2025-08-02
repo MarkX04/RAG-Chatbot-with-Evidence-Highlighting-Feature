@@ -137,36 +137,36 @@ function App() {
     console.log('🔧 Checking if need to revoke existing URL...')
     
     if (pdfUrl) {
-      console.log('🗑️ Revoking existing PDF URL:', pdfUrl)
+      console.log('Revoking existing PDF URL:', pdfUrl)
       URL.revokeObjectURL(pdfUrl)
       setPdfUrl(null)
     }
     
-    console.log('🚀 Starting PDF fetch process...')
+    console.log('Starting PDF fetch process...')
     
     try {
-      console.log('🔄 Fetching PDF from API...')
+      console.log('Fetching PDF from API...')
       const response = await fetch(`${API_ENDPOINTS.HIGHLIGHTED_PDFS}?page=${pageNumber}`)
-      
-      console.log('📡 API Response status:', response.status)
-      console.log('📡 API Response ok:', response.ok)
-      
+
+      console.log('API Response status:', response.status)
+      console.log('API Response ok:', response.ok)
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-      
-      console.log('📄 Converting response to blob...')
+
+      console.log('Converting response to blob...')
       const blob = await response.blob()
-      console.log('📄 Blob size:', blob.size, 'bytes')
-      
+      console.log('Blob size:', blob.size, 'bytes')
+
       const url = URL.createObjectURL(blob)
-      console.log('🎯 Created object URL:', url)
+      console.log('Created object URL:', url)
       
       setPdfUrl(url)
-      console.log('✅ PDF URL set successfully')
-      
+      console.log('PDF URL set successfully')
+
     } catch (error) {
-      console.error('❌ Error loading PDF:', error)
+      console.error('Error loading PDF:', error)
       setPdfUrl(null)
     }
   }
@@ -292,7 +292,7 @@ function App() {
                         variant="normal"
                         onClick={() => setIsUploadModalOpen(true)}
                       >
-                        📁 Upload Documents
+                        Upload Documents
                       </Button>
                       <StatusIndicator 
                         type={backendStatus.status === 'healthy' ? 'success' : 'error'}
@@ -350,12 +350,12 @@ function App() {
                   <div style={{ flex: 1, overflow: 'hidden' }}>
                     {pdfUrl ? (
                       <>
-                        {console.log('🎨 Rendering CanvasPDFViewer with pdfUrl:', pdfUrl)}
+                        {console.log('Rendering CanvasPDFViewer with pdfUrl:', pdfUrl)}
                         <CanvasPDFViewer 
                           pdfUrl={pdfUrl}
                           initialPageNumber={selectedPDF.pageNumber + 1}
                           onPageChange={(newPage) => {
-                            console.log(`🎨 Canvas PDF page changed: ${newPage}`)
+                            console.log(`Canvas PDF page changed: ${newPage}`)
                             setSelectedPDF(prev => prev ? { 
                               ...prev, 
                               pageNumber: newPage - 1 
@@ -365,7 +365,7 @@ function App() {
                       </>
                     ) : (
                       <>
-                        {console.log('⏳ No pdfUrl - showing loading...')}
+                        {console.log('No pdfUrl - showing loading...')}
                         <Box textAlign="center" padding="xl">
                           <StatusIndicator type="loading">Loading PDF...</StatusIndicator>
                         </Box>

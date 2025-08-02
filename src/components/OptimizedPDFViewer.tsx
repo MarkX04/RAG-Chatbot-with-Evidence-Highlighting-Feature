@@ -19,7 +19,7 @@ const OptimizedPDFViewer: React.FC<OptimizedPDFViewerProps> = ({
 
   // Force reload iframe when page changes
   const navigateToPage = (pageNumber: number) => {
-    console.log(`📖 Navigating to page ${pageNumber}`)
+    console.log(`Navigating to page ${pageNumber}`)
     setCurrentPage(pageNumber)
     setLoading(true)
     setIframeKey(prev => prev + 1) // Force iframe reload
@@ -36,7 +36,7 @@ const OptimizedPDFViewer: React.FC<OptimizedPDFViewerProps> = ({
 
   const handleIframeLoad = () => {
     setLoading(false)
-    console.log(`✅ PDF loaded - Page ${currentPage}`)
+    console.log(`PDF loaded - Page ${currentPage}`)
   }
 
   if (!pdfUrl) {

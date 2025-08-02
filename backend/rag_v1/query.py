@@ -106,10 +106,6 @@ def simple_highlight(pdf_path, output_path, text_to_highlight, page_number, thre
         page = doc.load_page(page_number)
         rects = page.search_for(text_to_highlight)
 
-        # print("CHECKING - ",text_to_highlight)
-        # print(rects)
-
-
         if (len(rects) == 0):
             print("Failed to highlight from LLM. CHECKING the partial highlight!")
             partial_highlight(pdf_path,output_path,text_to_highlight,page_number,file_exist,threshold=90)
@@ -126,7 +122,7 @@ def simple_highlight(pdf_path, output_path, text_to_highlight, page_number, thre
         else:
             doc.save(output_path, garbage=0, deflate=True, clean=True)
             doc.close()
-        print(f"✅ Highlighted PDF saved to: {output_path}")
+        print(f"Highlighted PDF saved to: {output_path}")
         return
     except Exception as e:
         print("DANGBILOI@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
@@ -150,9 +146,7 @@ def extract_info(resp: str):
         cleaned_str = json_str.replace("\\n", "\n")
         return resp[:end_answer], json.loads(cleaned_str)
     
-# ✅ HÀM CHÍNH
 def main():
-    # CLI
     parser = argparse.ArgumentParser()
     parser.add_argument("query_text", type=str, help="The query text.")
     args = parser.parse_args()
@@ -164,10 +158,9 @@ def main():
     #     model_kwargs={"device": "cpu"},
     #     encode_kwargs={"normalize_embeddings": True}
     # )
-
     embedding_function = BedrockEmbeddings(
         model_id="cohere.embed-english-v3",
-        region_name="us-east-1"  # thay bằng region bạn dùng Bedrock
+        region_name="us-east-1"  # thay bằng region dùng Bedrock
     )
     db = Chroma(persist_directory=CHROMA_PATH, embedding_function=embedding_function)
 
@@ -178,21 +171,17 @@ def main():
     initial_result = db.similarity_search_with_relevance_scores(bge_query, k=10)
 
     #results = [(doc,score) for doc,score in initial_result if score >= 0.65]
-
     # all_docs = db.get(include=['documents', 'metadatas'])
     # for i, (doc, meta) in enumerate(zip(all_docs['documents'], all_docs['metadatas'])):
     #     print(f"Document {i}")
     #     print("Text:", doc)  # In 200 ký tự đầu
     #     print("Metadata:", meta)
     #     print("-" * 40)
-
     #     if (i == 50):
     #         break
 
     #return
-
     results = initial_result
-
     # for i in initial_result:
     #     print(i)
     #     print("\n\n\n")
@@ -203,33 +192,25 @@ def main():
     # if len(results) == 0 or results[0][1] < 0.3:
     #     print("Unable to find matching results.")
     #     return
-
     #number = 1
-
 
     # for doc, score in results:
     #     source = doc.metadata.get("source", None)
     #     if source is None or not source.endswith(".pdf"):
     #         continue
-
-    #     print(f"\n🔍 Highlighting evidence from: {source}")
-        
+    #     print(f"\n Highlighting evidence from: {source}")
     #     chunk_text = doc.page_content
     #     output_highlighted_pdf = source.replace(".pdf", f"highlighted_{number}.pdf")
-
-
         #output_highlighted_pdf = source.replace(".pdf", f"highlighted_{number}.pdf")
         #number += 1
 
-        # ✅ Gọi hàm highlight mới
+        # Gọi hàm highlight mới
         # simple_highlight(
         #     pdf_path=source,
         #     output_path=output_highlighted_pdf,
         #     text_to_highlight=chunk_text,
         #     page_number=doc.metadata["page"]
         # )
-
-
     instruction = """
 You will be given a set of document chunks.
 
@@ -240,7 +221,6 @@ You must copy phrases directly from the context only.
 The output will be used for string-matching highlights. So it must match *exactly* the content provided.
 """
 
-    
     # Tạo prompt cho LLM từ context
     #context_text = "\n\n---\n\n".join([doc.page_content for doc, _ in results])
     context_text = "\n\n---\n\n".join(
@@ -314,13 +294,13 @@ Answer format:
             continue
 
         text_highlight = item["highlight_text"]
-        doc, _ = results[id_num]  # ✅ sửa dòng này
+        doc, _ = results[id_num]
 
         source = doc.metadata["file_path"]
         file_name = doc.metadata["source"]
         page_num = doc.metadata["page"]
     
-        print(f"🔍 Highlighting chunk {id_num} from {file_name} page {page_num}")
+        print(f"Highlighting chunk {id_num} from {file_name} page {page_num}")
         print(source)
     
         output_path = f"highlight_evidence_{file_name}_combined.pdf"
@@ -346,6 +326,6 @@ Answer format:
     # formatted_response = f"\n===== RESPONSE =====\n{response_text}\nSources: {sources}"
     # print(formatted_response)
 
-# ✅ ENTRY POINT
+# ENTRY POINT
 if __name__ == "__main__":
     main()

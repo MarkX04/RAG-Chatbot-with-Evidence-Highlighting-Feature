@@ -24,9 +24,9 @@ sys.path.append(RAG_PATH)
 try:
     import create_db
     import query
-    print("✅ Successfully imported RAG modules")
+    print("Successfully imported RAG modules")
 except ImportError as e:
-    print(f"❌ Error importing RAG modules: {e}")
+    print(f"Error importing RAG modules: {e}")
     create_db = None
     query = None
 
@@ -53,7 +53,7 @@ class ChatResponse(BaseModel):
     response: str
     sources: List[dict] = []
     highlighted_pdfs: List[str] = []
-    page_references: List[dict] = []  # New field for structured page data
+    page_references: List[dict] = []
 
 class UploadResponse(BaseModel):
     success: bool
@@ -71,7 +71,7 @@ data_path = os.path.join(RAG_PATH, "data")
 
 # Session management for PDF files
 chat_sessions = {}  # session_id -> {files: [], created_at: timestamp}
-SESSION_TIMEOUT = 3600  # 1 hour in seconds
+SESSION_TIMEOUT = 3600
 
 def check_vector_db_exists():
     """Check if vector database exists và có data"""
@@ -102,9 +102,8 @@ def cleanup_old_sessions():
         cleanup_session_files(session_id)
 
 def call_query_py(question: str, session_id: str = None):
-    """Gọi trực tiếp query.py của bạn và capture output"""
+    """Gọi trực tiếp query.py và capture output"""
     try:
-        # Generate session ID if not provided
         if not session_id:
             session_id = str(uuid.uuid4())[:8]
         
@@ -112,15 +111,11 @@ def call_query_py(question: str, session_id: str = None):
         original_cwd = os.getcwd()
         os.chdir(RAG_PATH)
         
-        # Comment out session cleanup - let files overwrite
-        # cleanup_session_files(session_id)
-        
-        # Run query.py subprocess với question
         result = subprocess.run(
             [sys.executable, "query.py", question],
             capture_output=True,
             text=True,
-            timeout=120  # 2 minutes timeout
+            timeout=120
         )
         
         os.chdir(original_cwd)
@@ -157,12 +152,11 @@ def call_query_py(question: str, session_id: str = None):
         print(f"Error calling query.py: {e}")
         return None
     finally:
-        # Ensure we return to original directory
         if 'original_cwd' in locals():
             os.chdir(original_cwd)
 
 def call_create_db():
-    """Gọi trực tiếp create_db.py của bạn để rebuild vector database"""
+    """Gọi trực tiếp create_db.py để rebuild vector database"""
     try:
         original_cwd = os.getcwd()
         os.chdir(RAG_PATH)
@@ -172,16 +166,16 @@ def call_create_db():
             [sys.executable, "create_db.py"],
             capture_output=True,
             text=True,
-            timeout=300  # 5 minutes timeout
+            timeout=300
         )
         
         os.chdir(original_cwd)
         
         if result.returncode == 0:
-            print("✅ Vector database created successfully")
+            print("Vector database created successfully")
             return True
         else:
-            print(f"❌ Error creating vector database: {result.stderr}")
+            print(f"Error creating vector database: {result.stderr}")
             return False
             
     except Exception as e:
@@ -193,13 +187,13 @@ def call_create_db():
 
 def parse_query_output(output: str):
     """Parse output từ query.py để extract answer"""
-    print(f"📝 Parsing query output. Length: {len(output) if output else 0}")
+    print(f"Parsing query output. Length: {len(output) if output else 0}")
     
     if not output:
         return "No response from RAG system", [], []
     
     lines = output.split('\n')
-    print(f"📝 Number of lines: {len(lines)}")
+    print(f"Number of lines: {len(lines)}")
     
     # Tìm section markers
     fullcheck_idx = -1
@@ -273,10 +267,10 @@ def parse_query_output(output: str):
     sources = []
     page_refs = {}  # document_name -> {page_number -> [highlights]}
     
-    print(f"📝 Searching for sources in {len(lines)} lines...")
+    print(f"Searching for sources in {len(lines)} lines...")
     
     for i, line in enumerate(lines):
-        if "🔍 Highlighting evidence from:" in line:
+        if "Highlighting evidence from:" in line:
             source_name = line.split(":")[-1].strip()
             sources.append({
                 "id": f"source_{len(sources)}",
@@ -284,22 +278,20 @@ def parse_query_output(output: str):
                 "content": "Evidence found in document",
                 "type": "pdf"
             })
-            print(f"📝 Added source {len(sources)-1}: {source_name}")
+            print(f"Added source {len(sources)-1}: {source_name}")
         
         # Also check for alternative source patterns
         if "Evidence found in document" in line or "source" in line.lower():
-            print(f"📝 Line {i}: {line.strip()}")
-    
-    print(f"📝 Total sources extracted: {len(sources)}")
-    
-    # If no sources found with standard pattern, try alternative patterns
+            print(f"Line {i}: {line.strip()}")
+
+    print(f"Total sources extracted: {len(sources)}")
     if len(sources) == 0:
-        print("📝 No sources found with standard pattern, trying alternatives...")
+        print("No sources found with standard pattern, trying alternatives...")
         seen_documents = set()  # Track unique documents
         
         for i, line in enumerate(lines):
             if "pdf" in line.lower() or "doc" in line.lower():
-                print(f"📝 Potential source line {i}: {line.strip()}")
+                print(f"Potential source line {i}: {line.strip()}")
                 # Extract document names from any line containing PDF
                 if ".pdf" in line:
                     pdf_match = re.search(r'([^/\\:]+\.pdf)', line)
@@ -318,10 +310,10 @@ def parse_query_output(output: str):
                                 "content": "Evidence found in document",
                                 "type": "pdf"
                             })
-                            print(f"📝 Added unique source {len(sources)-1}: {source_name}")
-    
-    print(f"📝 Final sources count: {len(sources)}")
-    
+                            print(f"Added unique source {len(sources)-1}: {source_name}")
+
+    print(f"Final sources count: {len(sources)}")
+
     # Parse highlight info from CHECKING section to get page structure
     if checking_idx != -1:
         checking_lines = lines[checking_idx + 1:]
@@ -332,15 +324,15 @@ def parse_query_output(output: str):
             json_match = re.search(r'\[.*?\]', checking_text, re.DOTALL)
             if json_match:
                 json_str = json_match.group()
-                print(f"📝 Found JSON in CHECKING: {json_str[:200]}...")
+                print(f"Found JSON in CHECKING: {json_str[:200]}...")
                 
                 # Clean up JSON if needed
                 json_str = json_str.replace("'", '"')  # Fix single quotes
                 json_str = re.sub(r'([{,]\s*)(\w+):', r'\1"\2":', json_str)  # Fix unquoted keys
                 
                 highlight_info = json.loads(json_str)
-                print(f"📝 Found {len(highlight_info)} highlight entries in CHECKING section")
-                
+                print(f"Found {len(highlight_info)} highlight entries in CHECKING section")
+
                 # Group highlights by document and page
                 for highlight in highlight_info:
                     chunk_id = highlight.get('chunk_id', 0)
@@ -348,12 +340,12 @@ def parse_query_output(output: str):
                     
                     # Only process highlights if we have actual source documents
                     if len(sources) == 0:
-                        print(f"📝 Skipping highlight - no source documents found")
+                        print(f"Skipping highlight - no source documents found")
                         continue
                     
                     # Use the first (and usually only) source document
                     doc_name = sources[0]["title"]
-                    page_num = 1  # Default page
+                    page_num = 1
                     
                     # Parse page number from highlight_text or context
                     page_pattern = r'page\s*(\d+)|Page\s*(\d+)|trang\s*(\d+)'
@@ -362,15 +354,15 @@ def parse_query_output(output: str):
                     page_match = re.search(page_pattern, highlight_text, re.IGNORECASE)
                     if page_match:
                         page_num = int([g for g in page_match.groups() if g][0])
-                        print(f"📝 Found page {page_num} in highlight text for {doc_name}")
+                        print(f"Found page {page_num} in highlight text for {doc_name}")
                     else:
                         # Check in context lines around this highlight
                         for line in lines:
-                            if highlight_text[:20] in line:  # Find related line
+                            if highlight_text[:20] in line: 
                                 line_page_match = re.search(page_pattern, line, re.IGNORECASE)
                                 if line_page_match:
                                     page_num = int([g for g in line_page_match.groups() if g][0])
-                                    print(f"📝 Found page {page_num} in context for {doc_name}")
+                                    print(f"Found page {page_num} in context for {doc_name}")
                                     break
                     
                     if doc_name not in page_refs:
@@ -382,19 +374,19 @@ def parse_query_output(output: str):
                     page_refs[doc_name][page_num].append(highlight_text)
                         
         except (json.JSONDecodeError, AttributeError) as e:
-            print(f"📝 Could not parse CHECKING JSON: {e}")
+            print(f"Could not parse CHECKING JSON: {e}")
             # Try alternative parsing - look for chunk_id and highlight_text patterns
             chunk_pattern = r'"chunk_id":\s*(\d+).*?"highlight_text":\s*"([^"]+)"'
             matches = re.findall(chunk_pattern, checking_text, re.DOTALL)
             
             if matches:
-                print(f"📝 Found {len(matches)} highlights using pattern matching")
+                print(f"Found {len(matches)} highlights using pattern matching")
                 for chunk_id_str, highlight_text in matches:
                     chunk_id = int(chunk_id_str)
                     
                     if chunk_id < len(sources):
                         doc_name = sources[chunk_id]["title"]
-                        page_num = 1  # Default
+                        page_num = 1
                         
                         # Try to extract page from highlight text
                         page_match = re.search(r'page\s*(\d+)', highlight_text, re.IGNORECASE)
@@ -407,19 +399,18 @@ def parse_query_output(output: str):
                             page_refs[doc_name][page_num] = []
                         
                         page_refs[doc_name][page_num].append(highlight_text)
-                        print(f"📝 Added highlight for {doc_name}, page {page_num}")
+                        print(f"Added highlight for {doc_name}, page {page_num}")
             else:
-                print("📝 No highlights found using pattern matching either")
-    
-    # Convert page_refs to structured format - only include pages with actual highlights
+                print("No highlights found using pattern matching either")
+
     page_references = []
-    print(f"📝 Processing page_refs: {page_refs}")
-    
+    print(f"Processing page_refs: {page_refs}")
+
     for doc_name, pages in page_refs.items():
         page_list = []
         for page_num, highlights in pages.items():
             # Only add pages that have actual highlights
-            if highlights:  # Check if highlights list is not empty
+            if highlights:
                 page_list.append({
                     "pageNumber": page_num,
                     "highlights": highlights
@@ -430,17 +421,15 @@ def parse_query_output(output: str):
                 "documentName": doc_name,
                 "pages": page_list
             })
-    
-    print(f"📝 Initial page_references from parsing: {len(page_references)}")
-    
+
+    print(f"Initial page_references from parsing: {len(page_references)}")
+
     # PRIORITIZE Method 0: Extract ALL pages from chunk highlighting logs FIRST
-    # This will override the incomplete results from CHECKING section
-    print("📝 Starting Method 0: Extract pages from chunk highlighting logs...")
-    chunk_page_info = {}  # doc_name -> set of pages
+    print("Starting Method 0: Extract pages from chunk highlighting logs...")
+    chunk_page_info = {}
     
     for i, line in enumerate(lines):
-        # Look for chunk highlighting logs: "🔍 Highlighting chunk X from document.pdf page Y"
-        chunk_match = re.search(r'🔍 Highlighting chunk \d+ from (.+?)\.pdf page (\d+)', line)
+        chunk_match = re.search(r'Highlighting chunk \d+ from (.+?)\.pdf page (\d+)', line)
         if chunk_match:
             doc_base = chunk_match.group(1)
             page_num = int(chunk_match.group(2))
@@ -449,12 +438,11 @@ def parse_query_output(output: str):
             if doc_name not in chunk_page_info:
                 chunk_page_info[doc_name] = set()
             chunk_page_info[doc_name].add(page_num)
-            print(f"📝 Found chunk highlighting: {doc_name} page {page_num}")
-    
-    # If we found chunk page info, use it instead of CHECKING section results
+            print(f"Found chunk highlighting: {doc_name} page {page_num}")
+
     if chunk_page_info:
-        print("📝 Method 0 found pages - overriding CHECKING section results")
-        page_references = []  # Clear previous results
+        print("Method 0 found pages - overriding CHECKING section results")
+        page_references = []
         
         for doc_name, page_set in chunk_page_info.items():
             pages_list = []
@@ -469,40 +457,36 @@ def parse_query_output(output: str):
                     "documentName": doc_name,
                     "pages": pages_list
                 })
-                print(f"📝 Method 0 result: {doc_name} with {len(pages_list)} pages: {[p['pageNumber'] for p in pages_list]}")
-    
-    print(f"📝 After Method 0 - page_references count: {len(page_references)}")
-    
+                print(f"Method 0 result: {doc_name} with {len(pages_list)} pages: {[p['pageNumber'] for p in pages_list]}")
+
+    print(f"After Method 0 - page_references count: {len(page_references)}")
+
     # If no page_references from highlight parsing, extract from CHECKING section only
     if len(page_references) == 0 and checking_idx != -1:
-        print("📝 No page_refs from highlights, extracting from CHECKING section...")
+        print("No page_refs from highlights, extracting from CHECKING section...")
         checking_lines = lines[checking_idx + 1:]
         checking_text = '\n'.join(checking_lines)
         
         try:
-            # Extract highlight_doc_info from CHECKING section
             json_match = re.search(r'\[.*?\]', checking_text, re.DOTALL)
             if json_match:
                 highlight_info = json.loads(json_match.group())
-                print(f"📝 Found {len(highlight_info)} highlight entries in CHECKING section")
-                
+                print(f"Found {len(highlight_info)} highlight entries in CHECKING section")
+
                 # Create page_references from highlight_info only
                 doc_page_map = {}
                 
                 for highlight in highlight_info:
                     chunk_id = highlight.get('chunk_id', 0)
                     highlight_text = highlight.get('highlight_text', '')
-                    
-                    # Only use the first source document (avoid Unknown Document)
                     if len(sources) == 0:
-                        print("📝 Skipping highlight - no source documents found")
+                        print("Skipping highlight - no source documents found")
                         continue
                         
                     # Extract proper document name from source title
                     source_title = sources[0]["title"]
-                    
-                    # If source title is in format "🔍 Highlighting chunk X from filename.pdf", extract filename
-                    filename_match = re.search(r'🔍 Highlighting chunk \d+ from (.+\.pdf)', source_title)
+
+                    filename_match = re.search(r'Highlighting chunk \d+ from (.+\.pdf)', source_title)
                     if filename_match:
                         doc_name = filename_match.group(1)
                     else:
@@ -512,25 +496,25 @@ def parse_query_output(output: str):
                             doc_name = pdf_match.group(1)
                         else:
                             doc_name = source_title  # Fallback to original title
-                    
-                    print(f"📝 Using document name: {doc_name} (from source: {source_title})")
-                    
+
+                    print(f"Using document name: {doc_name} (from source: {source_title})")
+
                     # Extract page number from source title, highlight text, or context
-                    page_num = 1  # Default
+                    page_num = 1
                     page_pattern = r'page\s*(\d+)|Page\s*(\d+)|trang\s*(\d+)'
                     
                     # First try to extract from source title (most reliable)
                     source_page_match = re.search(r'🔍 Highlighting chunk \d+ from .+ page (\d+)', source_title)
                     if source_page_match:
                         page_num = int(source_page_match.group(1))
-                        print(f"📝 Found page {page_num} from source title")
+                        print(f"Found page {page_num} from source title")
                     else:
                         # Fallback: search in highlight text
                         page_match = re.search(page_pattern, highlight_text, re.IGNORECASE)
                         if page_match:
                             page_num = int([g for g in page_match.groups() if g][0])
-                            print(f"📝 Found page {page_num} from highlight text")
-                    
+                            print(f"Found page {page_num} from highlight text")
+
                     # Add to document page mapping
                     if doc_name not in doc_page_map:
                         doc_page_map[doc_name] = {}
@@ -538,8 +522,8 @@ def parse_query_output(output: str):
                         doc_page_map[doc_name][page_num] = []
                     
                     doc_page_map[doc_name][page_num].append(highlight_text)
-                    print(f"📝 Added highlight for {doc_name}, page {page_num}")
-                
+                    print(f"Added highlight for {doc_name}, page {page_num}")
+
                 # Convert to page_references format
                 for doc_name, pages_dict in doc_page_map.items():
                     pages_list = []
@@ -557,18 +541,18 @@ def parse_query_output(output: str):
                         })
                         
         except (json.JSONDecodeError, AttributeError) as e:
-            print(f"📝 Could not parse CHECKING JSON: {e}")
-    
+            print(f"Could not parse CHECKING JSON: {e}")
+
     # If no page_references from highlight parsing, try to extract from output lines directly
     if len(page_references) == 0:
-        print("📝 No page_refs from previous methods, trying PDF operation logs...")
+        print("No page_refs from previous methods, trying PDF operation logs...")
         
         # Method 1: Extract page info from actual highlighting operations in the output (fallback)
         highlight_operations = {}
         
         for i, line in enumerate(lines):
                 # Look for actual highlighting operations with the new combined PDF format
-                if "✅ Highlighted PDF saved to:" in line and "_combined.pdf" in line:
+                if "Highlighted PDF saved to:" in line and "_combined.pdf" in line:
                     # Extract document from filename: highlight_evidence_DocumentName_combined.pdf
                     filename_match = re.search(r'highlight_evidence_(.+?)_combined\.pdf', line)
                     if filename_match:
@@ -578,9 +562,9 @@ def parse_query_output(output: str):
                             doc_name = doc_base
                         else:
                             doc_name = doc_base + ".pdf"
-                        
-                        print(f"📝 Processing highlight operation for: {doc_name}")
-                        
+
+                        print(f"Processing highlight operation for: {doc_name}")
+
                         # Initialize document entry
                         if doc_name not in highlight_operations:
                             highlight_operations[doc_name] = set()
@@ -596,13 +580,12 @@ def parse_query_output(output: str):
                     for j in range(len(context_lines)-1, -1, -1):  # Search backwards
                         context_line = context_lines[j]
                         
-                        # Look for pattern: "🔍 Highlighting chunk X from document page Y"
-                        chunk_highlight_match = re.search(r'🔍 Highlighting chunk \d+ from .+ page (\d+)', context_line)
+                        chunk_highlight_match = re.search(r'Highlighting chunk \d+ from .+ page (\d+)', context_line)
                         if chunk_highlight_match:
                             page_num = int(chunk_highlight_match.group(1))
                             if 1 <= page_num <= 1000:
                                 pages_found.add(page_num)
-                                print(f"📝 Found page {page_num} from chunk highlighting log for {doc_name}")
+                                print(f"Found page {page_num} from chunk highlighting log for {doc_name}")
                                 continue  # Continue to find all pages
                         
                         # Pattern 1: Look for simple_highlight or highlighting operations with page info
@@ -615,8 +598,8 @@ def parse_query_output(output: str):
                                     page_num = int(match)
                                     if 1 <= page_num <= 1000:
                                         pages_found.add(page_num)
-                                        print(f"📝 Found page {page_num} from highlighting context for {doc_name}")
-                        
+                                        print(f"Found page {page_num} from highlighting context for {doc_name}")
+
                         # Pattern 2: Look for direct page references in context (be more selective)
                         if any(keyword in context_line.lower() for keyword in ['metadata', 'source', 'chunk']):
                             page_matches = re.findall(r'page[\s_=:]*(\d+)', context_line, re.IGNORECASE)
@@ -624,8 +607,8 @@ def parse_query_output(output: str):
                                 page_num = int(match)
                                 if 10 <= page_num <= 50:  # More restrictive range
                                     pages_found.add(page_num)
-                                    print(f"📝 Found page {page_num} from metadata reference for {doc_name}")
-                    
+                                    print(f"Found page {page_num} from metadata reference for {doc_name}")
+
                     # Pattern 3: Look for chunk content that might contain page info
                     for j in range(len(context_lines)-1, -1, -1):
                         context_line = context_lines[j]
@@ -640,22 +623,22 @@ def parse_query_output(output: str):
                                     page_num = int(match)
                                     if 1 <= page_num <= 1000:
                                         pages_found.add(page_num)
-                                        print(f"📝 Found page {page_num} from chunk context for {doc_name}")
-                    
+                                        print(f"Found page {page_num} from chunk context for {doc_name}")
+
                     # Add all found pages
                     if pages_found:
                         highlight_operations[doc_name].update(pages_found)
-                        print(f"📝 Added pages {sorted(pages_found)} for highlight operation of {doc_name}")
+                        print(f"Added pages {sorted(pages_found)} for highlight operation of {doc_name}")
                     else:
-                        print(f"📝 No specific page found for this highlight operation of {doc_name}")
-        
-        print(f"📝 Found {len(highlight_operations)} documents with highlight operations")
-        
+                        print(f"No specific page found for this highlight operation of {doc_name}")
+
+        print(f"Found {len(highlight_operations)} documents with highlight operations")
+
         # Additional extraction: search the entire output for page references
         for doc_name in list(highlight_operations.keys()):
             if len(highlight_operations[doc_name]) == 0:  # If no pages found yet
-                print(f"📝 Searching entire output for pages for {doc_name}")
-                
+                print(f"Searching entire output for pages for {doc_name}")
+
                 doc_base = doc_name.replace('.pdf', '').replace(' ', '')
                 all_pages_found = set()
                 
@@ -683,12 +666,12 @@ def parse_query_output(output: str):
                                 # Filter for reasonable page range (avoid line numbers, etc.)
                                 if 10 <= page_num <= 50:
                                     all_pages_found.add(page_num)
-                                    print(f"📝 Found metadata page {page_num} from: {line.strip()[:100]}")
-                
+                                    print(f"Found metadata page {page_num} from: {line.strip()[:100]}")
+
                 # Method B: If no metadata found, look for document-specific references
                 if not all_pages_found:
-                    print(f"📝 No metadata pages found, searching document-specific references...")
-                    
+                    print(f"No metadata pages found, searching document-specific references...")
+
                     for line_idx, line in enumerate(lines):
                         line_clean = line.replace(' ', '').lower()
                         doc_base_clean = doc_base.lower()
@@ -710,19 +693,19 @@ def parse_query_output(output: str):
                                     # Be more selective about page ranges
                                     if 10 <= page_num <= 50:
                                         all_pages_found.add(page_num)
-                                        print(f"📝 Found document-specific page {page_num}")
-                
+                                        print(f"Found document-specific page {page_num}")
+
                 if all_pages_found:
                     highlight_operations[doc_name].update(all_pages_found)
-                    print(f"📝 Global search added pages {sorted(all_pages_found)} for {doc_name}")
+                    print(f"Global search added pages {sorted(all_pages_found)} for {doc_name}")
                 else:
-                    print(f"📝 No valid pages found in global search for {doc_name}")
-        
+                    print(f"No valid pages found in global search for {doc_name}")
+
         # Fallback: try chunk-based mapping only if we still have no pages
         for doc_name in highlight_operations:
             if len(highlight_operations[doc_name]) == 0:
-                print(f"📝 Using chunk-based fallback for {doc_name}")
-                
+                print(f"Using chunk-based fallback for {doc_name}")
+
                 if checking_idx != -1:
                     checking_lines = lines[checking_idx + 1:]
                     checking_text = '\n'.join(checking_lines)
@@ -739,13 +722,13 @@ def parse_query_output(output: str):
                         for chunk_id in sorted(chunk_ids)[:3]:  # Limit to first few chunks
                             estimated_page = chunk_id + 1
                             highlight_operations[doc_name].add(estimated_page)
-                        
-                        print(f"📝 Chunk-based fallback added pages: {sorted(highlight_operations[doc_name])}")
-        
+
+                        print(f"Chunk-based fallback added pages: {sorted(highlight_operations[doc_name])}")
+
         # Debug output
         for doc_name, page_set in highlight_operations.items():
-            print(f"📝 Final highlight operations - {doc_name}: pages {sorted(page_set)}")
-        
+            print(f"Final highlight operations - {doc_name}: pages {sorted(page_set)}")
+
         # Method 2: If no highlight operations found, look for chunk metadata patterns
         if not highlight_operations:
             chunk_metadata = {}
@@ -778,15 +761,15 @@ def parse_query_output(output: str):
                                         if doc_match:
                                             doc_name = doc_match.group(1)
                                             chunk_metadata[chunk_id] = (doc_name, page_num)
-                                            print(f"📝 Found chunk {chunk_id} operation: {doc_name} page {page_num}")
+                                            print(f"Found chunk {chunk_id} operation: {doc_name} page {page_num}")
                                             break
                                     break
                             break
             
             # If still no chunk metadata, try alternative approach looking at the raw data structure
             if not chunk_metadata:
-                print("📝 Trying alternative metadata extraction...")
-                
+                print("Trying alternative metadata extraction...")
+
                 # Look for any lines that contain both chunk info and page info
                 for i, line in enumerate(lines):
                     # Look for patterns that might contain chunk and page info together
@@ -798,8 +781,8 @@ def parse_query_output(output: str):
                         if len(sources) > 0:
                             doc_name = sources[0]["title"]
                             chunk_metadata[chunk_id] = (doc_name, page_num)
-                            print(f"📝 Alternative extraction: chunk {chunk_id} -> {doc_name} page {page_num}")
-                
+                            print(f"Alternative extraction: chunk {chunk_id} -> {doc_name} page {page_num}")
+
                 # Final fallback: assume sequential mapping if we have some pattern
                 if not chunk_metadata and len(sources) > 0:
                     # Look for all page numbers mentioned in the output
@@ -814,7 +797,7 @@ def parse_query_output(output: str):
                         chunk_id = 0
                         for page_num in sorted(all_pages):
                             chunk_metadata[chunk_id] = (doc_name, page_num)
-                            print(f"📝 Fallback mapping: chunk {chunk_id} -> {doc_name} page {page_num}")
+                            print(f"Fallback mapping: chunk {chunk_id} -> {doc_name} page {page_num}")
                             chunk_id += 1
             
             # Convert chunk metadata to highlight operations format
@@ -838,11 +821,11 @@ def parse_query_output(output: str):
                         "documentName": doc_name,
                         "pages": pages_list
                     })
-                    print(f"📝 Final document: {doc_name} with {len(pages_list)} pages: {[p['pageNumber'] for p in pages_list]}")
-        
+                    print(f"Final document: {doc_name} with {len(pages_list)} pages: {[p['pageNumber'] for p in pages_list]}")
+
         # Method 3: If still no results, try to extract from metadata patterns in the raw output
         if len(page_references) == 0:
-            print("📝 Trying metadata pattern extraction...")
+            print("Trying metadata pattern extraction...")
             metadata_pages = {}
             
             # Look for patterns like: "metadata": {"page": 5, "source": "document.pdf"}
@@ -856,8 +839,8 @@ def parse_query_output(output: str):
                 if doc_name not in metadata_pages:
                     metadata_pages[doc_name] = set()
                 metadata_pages[doc_name].add(page_num)
-                print(f"📝 Metadata pattern: {doc_name} page {page_num}")
-            
+                print(f"Metadata pattern: {doc_name} page {page_num}")
+
             # Convert metadata findings to page_references
             for doc_name, page_set in metadata_pages.items():
                 pages_list = []
@@ -872,17 +855,17 @@ def parse_query_output(output: str):
                         "documentName": doc_name,
                         "pages": pages_list
                     })
-                    print(f"📝 Metadata document: {doc_name} with pages: {[p['pageNumber'] for p in pages_list]}")
-    
-    print(f"📝 Final page_references count: {len(page_references)}")
+                    print(f"Metadata document: {doc_name} with pages: {[p['pageNumber'] for p in pages_list]}")
+
+    print(f"Final page_references count: {len(page_references)}")
     for ref in page_references:
         page_nums = [str(p['pageNumber']) for p in ref['pages']]
-        print(f"📝 Document: {ref['documentName']} -> Pages: {', '.join(page_nums)}")
-    
+        print(f"Document: {ref['documentName']} -> Pages: {', '.join(page_nums)}")
+
     # Only return actual page references with highlights - no fallback creation
     if len(page_references) == 0:
-        print("📝 No highlighted pages found in query output")
-    
+        print("No highlighted pages found in query output")
+
     return answer, sources, page_references
         
 
@@ -894,30 +877,13 @@ async def startup_event():
     try:
         vector_db_ready = check_vector_db_exists()
         if vector_db_ready:
-            print("✅ Vector database found and ready")
+            print("Vector database found and ready")
         else:
-            print("⚠️ Vector database not found. Upload documents to initialize.")
-        
-        # Clean up any old highlighted PDF files on startup
-        # Comment out cleanup - let files overwrite instead
-        # print("🧹 Cleaning up old highlighted PDF files on startup...")
-        # old_files = glob.glob(os.path.join(RAG_PATH, "highlight_evidence_*.pdf"))
-        # cleaned_count = 0
-        # for old_file in old_files:
-        #     try:
-        #         os.remove(old_file)
-        #         cleaned_count += 1
-        #     except Exception as e:
-        #         print(f"   Warning: Could not remove {os.path.basename(old_file)}: {e}")
-        # 
-        # if cleaned_count > 0:
-        #     print(f"   Removed {cleaned_count} old highlighted PDF files")
-        # else:
-        #     print("   No old highlighted PDF files to clean")
-        print("📁 PDF files will be overwritten instead of deleted")
-            
+            print("Vector database not found. Upload documents to initialize.")
+        print("PDF files will be overwritten instead of deleted")
+
     except Exception as e:
-        print(f"❌ Error checking vector database: {e}")
+        print(f"Error checking vector database: {e}")
 
 @app.get("/")
 async def root():
@@ -933,35 +899,24 @@ async def health_check():
         "status": "healthy",
         "vector_db_ready": vector_db_ready,
         "chroma_path_exists": os.path.exists(chroma_path),
-        "rag_available": True,  # Always true since we directly use your models
+        "rag_available": True,
         "data_path_exists": os.path.exists(data_path)
     }
 
 @app.post("/api/chat", response_model=ChatResponse)
 async def chat_endpoint(chat_request: ChatMessage):
-    """Main chat endpoint - gọi trực tiếp query.py của bạn"""
+    """Main chat endpoint - gọi trực tiếp query.py"""
     try:
         if not vector_db_ready:
             return ChatResponse(
-                response="⚠️ Knowledge base chưa sẵn sàng. Vui lòng upload PDF documents trước.",
+                response="Knowledge base chưa sẵn sàng. Vui lòng upload PDF documents trước.",
                 sources=[],
                 highlighted_pdfs=[]
             )
-
-        # Clean up old highlighted PDFs before generating new ones
-        # Comment out cleanup - let files overwrite instead
-        # print("🗑️ Cleaning up old highlighted PDF files before new query...")
-        # old_files = glob.glob(os.path.join(RAG_PATH, "highlight_evidence_*.pdf"))
-        # for old_file in old_files:
-        #     try:
-        #         os.remove(old_file)
-        #         print(f"   Removed: {os.path.basename(old_file)}")
-        #     except Exception as e:
-        #         print(f"   Failed to remove {os.path.basename(old_file)}: {e}")
-        print("📁 Files will be overwritten if they exist")
+        print("Files will be overwritten if they exist")
 
         # Gọi trực tiếp query.py với question
-        print(f"🔍 Querying: {chat_request.message}")
+        print(f"Querying: {chat_request.message}")
         output = call_query_py(chat_request.message)
         
         if output:
@@ -973,11 +928,10 @@ async def chat_endpoint(chat_request: ChatMessage):
             return ChatResponse(
                 response=answer,
                 sources=sources,
-                highlighted_pdfs=[],  # Your query.py creates highlighted PDFs
+                highlighted_pdfs=[],
                 page_references=page_references
             )
         else:
-            # Fallback response when API is throttled
             if "assignment 1" in chat_request.message.lower():
                 return ChatResponse(
                     response="Based on the provided context, Assignment 1 is about writing a lexer and a recognizer for the MiniGo programming language. The assignment requires students to implement these components using ANTLR, covering both lexical analysis and syntax recognition. Students will learn to define formally lexicon and grammar of a programming language, and use ANTLR to implement both a lexer and recognizer for programs written in MiniGo.\n\n*Note: Full response temporarily unavailable due to API rate limits. PDF references are still available.*",
@@ -1142,7 +1096,7 @@ async def get_highlighted_pdfs(page: Optional[int] = None):
         # Try to return any existing file as last resort
         existing_files = glob.glob(os.path.join(RAG_PATH, "*.pdf"))
         if existing_files:
-            print(f"📄 Emergency fallback: {existing_files[0]}")
+            print(f"Emergency fallback: {existing_files[0]}")
             return FileResponse(
                 path=existing_files[0],
                 filename="highlighted_evidence.pdf",
@@ -1154,26 +1108,25 @@ async def process_uploaded_document(file_path: str):
     """Background task - gọi create_db.py để rebuild vector database"""
     global vector_db_ready
     try:
-        print(f"🔄 Processing document: {file_path}")
+        print(f"Processing document: {file_path}")
         
         # Gọi trực tiếp create_db.py để rebuild vector database
         success = call_create_db()
         if success:
             vector_db_ready = check_vector_db_exists()
-            print(f"✅ Document processed successfully: {file_path}")
+            print(f"Document processed successfully: {file_path}")
         else:
-            print(f"❌ Failed to process document: {file_path}")
-        
-    except Exception as e:
-        print(f"❌ Error processing document {file_path}: {e}")
+            print(f"Failed to process document: {file_path}")
 
-# Xóa các helper functions không cần thiết vì dùng trực tiếp output từ query.py
+    except Exception as e:
+        print(f"Error processing document {file_path}: {e}")
+
 
 @app.delete("/api/cleanup-pdfs")
 async def cleanup_highlighted_pdfs():
     """Manually clean up all highlighted PDF files"""
     try:
-        print("🧹 Manual cleanup of highlighted PDF files...")
+        print("Manual cleanup of highlighted PDF files...")
         old_files = glob.glob(os.path.join(RAG_PATH, "highlight_evidence_*.pdf"))
         cleaned_count = 0
         
@@ -1184,8 +1137,7 @@ async def cleanup_highlighted_pdfs():
                 print(f"   Removed: {os.path.basename(old_file)}")
             except Exception as e:
                 print(f"   Failed to remove {os.path.basename(old_file)}: {e}")
-        
-        # Also cleanup session data
+
         cleanup_old_sessions()
         
         return {
@@ -1202,15 +1154,15 @@ async def cleanup_highlighted_pdfs():
         }
 
 if __name__ == "__main__":
-    print("🚀 Starting RAG Chatbot Backend...")
-    print("📚 Using your original create_db.py and query.py")
-    print("🌐 Server: http://localhost:8000")
-    print("📖 API Docs: http://localhost:8000/docs")
-    
+    print("Starting RAG Chatbot Backend...")
+    print("Using your original create_db.py and query.py")
+    print("Server: http://localhost:8000")
+    print("API Docs: http://localhost:8000/docs")
+
     try:
         import uvicorn
         uvicorn.run(app, host="0.0.0.0", port=8000)
     except ImportError:
-        print("❌ uvicorn not installed. Install with: pip install uvicorn")
+        print("uvicorn not installed. Install with: pip install uvicorn")
     except Exception as e:
-        print(f"❌ Error starting server: {e}")
+        print(f"Error starting server: {e}")

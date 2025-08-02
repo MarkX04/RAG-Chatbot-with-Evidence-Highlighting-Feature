@@ -253,13 +253,13 @@ export const CloudscapeChatMessage = ({ message, onPDFPageSelect }: ChatMessageP
 
   const handlePageSelect = async (documentName: string, pageNumber: number, highlights: string[]) => {
     // Call parent's PDF page select handler
-    console.log(`🔥 handlePageSelect called with: ${documentName}, page ${pageNumber}`, highlights)
+    console.log(`handlePageSelect called with: ${documentName}, page ${pageNumber}`, highlights)
     console.log('onPDFPageSelect function exists:', !!onPDFPageSelect)
     if (onPDFPageSelect) {
-      console.log('✅ Calling parent onPDFPageSelect')
+      console.log('Calling parent onPDFPageSelect')
       onPDFPageSelect(documentName, pageNumber, highlights)
     } else {
-      console.error('❌ onPDFPageSelect is not defined!')
+      console.error('onPDFPageSelect is not defined!')
     }
   }
 
@@ -352,7 +352,7 @@ export const CloudscapeChatMessage = ({ message, onPDFPageSelect }: ChatMessageP
             console.log('Will render PDF selector:', !isUser && hasPageRefs)
             
             if (!isUser && hasPageRefs) {
-              console.log('✅ Rendering PDFPageSelector with:', finalPageReferences)
+              console.log('Rendering PDFPageSelector with:', finalPageReferences)
               return (
                 <PDFPageSelector 
                   references={finalPageReferences}
@@ -360,7 +360,7 @@ export const CloudscapeChatMessage = ({ message, onPDFPageSelect }: ChatMessageP
                 />
               )
             } else {
-              console.log('❌ Not rendering PDFPageSelector - isUser:', isUser, 'hasPageRefs:', hasPageRefs)
+              console.log('Not rendering PDFPageSelector - isUser:', isUser, 'hasPageRefs:', hasPageRefs)
               return null
             }
           })()}

@@ -34,7 +34,7 @@ const CanvasPDFViewer: React.FC<CanvasPDFViewerProps> = ({
   useEffect(() => {
     const checkPDFJS = () => {
       if (window.pdfjsLib && window.pdfjsLib.getDocument) {
-        console.log('✅ PDF.js is ready')
+        console.log('PDF.js is ready')
         setPdfjsReady(true)
         return
       }
@@ -47,12 +47,12 @@ const CanvasPDFViewer: React.FC<CanvasPDFViewerProps> = ({
 
   // Load PDF document
   useEffect(() => {
-    console.log('🔧 CanvasPDFViewer useEffect triggered')
-    console.log('📄 pdfUrl:', pdfUrl)
-    console.log('📚 pdfjsReady:', pdfjsReady)
-    
+    console.log('CanvasPDFViewer useEffect triggered')
+    console.log('pdfUrl:', pdfUrl)
+    console.log('pdfjsReady:', pdfjsReady)
+
     if (!pdfUrl || !pdfjsReady) {
-      console.log('❌ Cannot load PDF - missing URL or PDF.js not ready')
+      console.log('Cannot load PDF - missing URL or PDF.js not ready')
       setPdfDoc(null)
       setLoading(false)
       return
@@ -62,19 +62,19 @@ const CanvasPDFViewer: React.FC<CanvasPDFViewerProps> = ({
       try {
         setLoading(true)
         setError(null)
-        
-        console.log('🔄 Loading PDF with PDF.js...')
+
+        console.log('Loading PDF with PDF.js...')
         const loadingTask = window.pdfjsLib.getDocument(pdfUrl)
         const pdf = await loadingTask.promise
-        
-        console.log(`✅ PDF loaded successfully with ${pdf.numPages} pages`)
-        
+
+        console.log(`PDF loaded successfully with ${pdf.numPages} pages`)
+
         setPdfDoc(pdf)
         setTotalPages(pdf.numPages)
         setLoading(false)
         
       } catch (err) {
-        console.error('❌ PDF load error:', err)
+        console.error('PDF load error:', err)
         setError('Failed to load PDF document')
         setLoading(false)
       }
@@ -100,8 +100,7 @@ const CanvasPDFViewer: React.FC<CanvasPDFViewerProps> = ({
       const ctx = canvas.getContext('2d')
       if (!ctx) return
 
-      console.log(`🎨 Rendering page ${currentPage}...`)
-      
+      console.log(`Rendering page ${currentPage}...`)
       // Clear canvas first to prevent conflicts
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
@@ -154,11 +153,11 @@ const CanvasPDFViewer: React.FC<CanvasPDFViewerProps> = ({
       renderTaskRef.current = page.render(renderContext)
       await renderTaskRef.current.promise
       renderTaskRef.current = null
-      console.log(`✅ Page ${currentPage} rendered successfully`)
-      
+      console.log(`Page ${currentPage} rendered successfully`)
+
     } catch (err: any) {
       if (err.name === 'RenderingCancelledException') {
-        console.log(`🔄 Render cancelled for page ${currentPage}`)
+        console.log(`Render cancelled for page ${currentPage}`)
       } else {
         console.error('Error rendering page:', err)
         setError(`Failed to render page ${currentPage}`)
@@ -176,14 +175,14 @@ const CanvasPDFViewer: React.FC<CanvasPDFViewerProps> = ({
   // Update page from parent
   useEffect(() => {
     if (initialPageNumber !== currentPage && initialPageNumber >= 1 && initialPageNumber <= totalPages) {
-      console.log(`📄 CanvasPDFViewer navigating to page ${initialPageNumber}`)
+      console.log(`CanvasPDFViewer navigating to page ${initialPageNumber}`)
       setCurrentPage(initialPageNumber)
     }
   }, [initialPageNumber, currentPage, totalPages])
 
   const goToPage = (pageNumber: number) => {
     if (pageNumber >= 1 && pageNumber <= totalPages) {
-      console.log(`🚀 Canvas PDF navigating to page ${pageNumber}`)
+      console.log(`Canvas PDF navigating to page ${pageNumber}`)
       setCurrentPage(pageNumber)
       onPageChange?.(pageNumber)
     }
@@ -191,28 +190,28 @@ const CanvasPDFViewer: React.FC<CanvasPDFViewerProps> = ({
 
   const handleZoomIn = () => {
     const newZoom = Math.min(zoomLevel + 0.25, 3.0) // Max 3x zoom
-    console.log(`🔍 Zoom In: ${zoomLevel} → ${newZoom}`)
+    console.log(`Zoom In: ${zoomLevel} → ${newZoom}`)
     setZoomLevel(newZoom)
   }
 
   const handleZoomOut = () => {
     const newZoom = Math.max(zoomLevel - 0.25, 0.25) // Min 0.25x zoom
-    console.log(`🔍 Zoom Out: ${zoomLevel} → ${newZoom}`)
+    console.log(`Zoom Out: ${zoomLevel} → ${newZoom}`)
     setZoomLevel(newZoom)
   }
 
   const handleZoomReset = () => {
-    console.log(`🔍 Zoom Reset: ${zoomLevel} → 0.65`)
+    console.log(`Zoom Reset: ${zoomLevel} → 0.65`)
     setZoomLevel(0.65)
   }
 
-  console.log('🎨 CanvasPDFViewer render - pdfUrl:', pdfUrl)
-  console.log('🎨 CanvasPDFViewer render - loading:', loading)
-  console.log('🎨 CanvasPDFViewer render - error:', error)
-  console.log('🎨 CanvasPDFViewer render - pdfDoc:', !!pdfDoc)
+  console.log('CanvasPDFViewer render - pdfUrl:', pdfUrl)
+  console.log('CanvasPDFViewer render - loading:', loading)
+  console.log('CanvasPDFViewer render - error:', error)
+  console.log('CanvasPDFViewer render - pdfDoc:', !!pdfDoc)
 
   if (!pdfUrl) {
-    console.log('📄 No pdfUrl - showing loading...')
+    console.log('No pdfUrl - showing loading...')
     return (
       <Box textAlign="center" padding="xl">
         <StatusIndicator type="loading">Loading PDF...</StatusIndicator>
@@ -221,7 +220,7 @@ const CanvasPDFViewer: React.FC<CanvasPDFViewerProps> = ({
   }
 
   if (error) {
-    console.log('❌ Error state - showing error...')
+    console.log('Error state - showing error...')
     return (
       <Box textAlign="center" padding="xl">
         <StatusIndicator type="error">{error}</StatusIndicator>
@@ -319,13 +318,13 @@ const CanvasPDFViewer: React.FC<CanvasPDFViewerProps> = ({
         <canvas
           ref={canvasRef}
           style={{
-            maxWidth: 'none', // Allow canvas to be larger than container
+            maxWidth: 'none',
             maxHeight: 'none',
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
             backgroundColor: 'white',
             borderRadius: '6px',
             display: loading ? 'none' : 'block',
-            imageRendering: 'pixelated' // Prevent blur on scaling
+            imageRendering: 'pixelated'
           }}
         />
       </div>

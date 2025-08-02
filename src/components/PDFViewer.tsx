@@ -38,7 +38,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
           actions={
             <SpaceBetween direction="horizontal" size="xs">
               <Button variant="normal" onClick={handleDownload}>
-                📥 Download PDF
+                Download PDF
               </Button>
               <Button variant="primary" onClick={onClose}>
                 Close
@@ -46,7 +46,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
             </SpaceBetween>
           }
         >
-          📄 Evidence PDF - Highlighted References
+          Evidence PDF - Highlighted References
         </Header>
       }
     >
@@ -54,14 +54,14 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         {error ? (
           <Box textAlign="center" padding="xl">
             <div style={{ color: '#d13212', fontSize: '16px', marginBottom: '16px' }}>
-              ⚠️ Unable to load PDF
+              Unable to load PDF
             </div>
             <div style={{ color: '#687078', marginBottom: '20px' }}>
               {error}
             </div>
             <SpaceBetween direction="horizontal" size="s">
               <Button variant="normal" onClick={handleDownload}>
-                📥 Download Instead
+                Download Instead
               </Button>
               <Button onClick={onClose}>Close</Button>
             </SpaceBetween>

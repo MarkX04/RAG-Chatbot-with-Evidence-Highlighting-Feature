@@ -36,7 +36,7 @@ const ReactPDFViewer: React.FC<ReactPDFViewerProps> = ({
 
   const goToPage = useCallback((newPageNumber: number) => {
     if (newPageNumber >= 1 && newPageNumber <= numPages) {
-      console.log(`🚀 React-PDF navigating to page ${newPageNumber} (instant!)`)
+      console.log(`React-PDF navigating to page ${newPageNumber} (instant!)`)
       setPageNumber(newPageNumber)
       onPageChange?.(newPageNumber)
     }

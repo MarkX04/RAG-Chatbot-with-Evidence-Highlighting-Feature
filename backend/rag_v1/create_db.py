@@ -40,11 +40,10 @@ def load_documents():
                 # Đảm bảo page metadata được set đúng
                 if "page" not in doc.metadata:
                     doc.metadata["page"] = 0  # default page nếu không có
-                print(f"📄 Loaded {filename} page {doc.metadata.get('page', 'unknown')}")
-            print(f"✅ Loaded {len(docs)} pages from {filename}")
+                print(f"Loaded {filename} page {doc.metadata.get('page', 'unknown')}")
+            print(f"Loaded {len(docs)} pages from {filename}")
             all_docs.extend(docs)
-    
-    print(f"📚 Total documents loaded: {len(all_docs)}")
+    print(f"Total documents loaded: {len(all_docs)}")
     # Print some metadata examples for debugging
     for i, doc in enumerate(all_docs[:3]):
         print(f"Sample doc {i}: page={doc.metadata.get('page')}, source={doc.metadata.get('source')}")
@@ -68,7 +67,7 @@ def split_text(documents: list[Document]):
         print(document.page_content)
         print(document.metadata)
     else:
-        print("⚠️ Không có đủ chunks để preview.")
+        print("Không có đủ chunks để preview.")
 
     return chunks
 
@@ -88,7 +87,7 @@ def save_to_chroma(chunks: list[Document]):
 
     embedding_model = BedrockEmbeddings(
         model_id="cohere.embed-english-v3",
-        region_name="us-east-1"  # thay bằng region bạn dùng Bedrock
+        region_name="us-east-1"  # thay bằng region dùng Bedrock
     )
     db = Chroma.from_documents(
         chunks, embedding_model, persist_directory=CHROMA_PATH

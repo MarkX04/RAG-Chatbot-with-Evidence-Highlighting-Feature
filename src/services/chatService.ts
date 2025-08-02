@@ -59,21 +59,21 @@ export class ChatService {
       
       if (health.status === 'error') {
         return {
-          response: `❌ Backend server is not available. Please make sure the Python backend is running on port 3001.\n\nTo start the backend:\n1. cd backend\n2. ./setup.sh (first time only)\n3. ./run.sh`,
+          response: `Backend server is not available. Please make sure the Python backend is running on port 3001.\n\nTo start the backend:\n1. cd backend\n2. ./setup.sh (first time only)\n3. ./run.sh`,
           sources: []
         }
       }
 
       if (!health.ragAvailable) {
         return {
-          response: `⚠️ RAG functionality is not available. Please check backend configuration and ensure all dependencies are installed.\n\nMessage: "${message}"`,
+          response: `RAG functionality is not available. Please check backend configuration and ensure all dependencies are installed.\n\nMessage: "${message}"`,
           sources: []
         }
       }
 
       if (!health.vectorDbReady) {
         return {
-          response: `⚠️ Knowledge base is not ready. Please upload PDF documents first to enable RAG functionality.\n\nYour question: "${message}"\n\nTo upload documents: Use the document upload feature or place PDF files in RAG-v1/data/ppl/ directory.`,
+          response: `Knowledge base is not ready. Please upload PDF documents first to enable RAG functionality.\n\nYour question: "${message}"\n\nTo upload documents: Use the document upload feature or place PDF files in RAG-v1/data/ppl/ directory.`,
           sources: []
         }
       }
@@ -107,7 +107,7 @@ export class ChatService {
       console.error('Error sending message:', error)
       
       return {
-        response: `❌ Error connecting to RAG backend: ${error instanceof Error ? error.message : 'Unknown error'}\n\nYour message: "${message}"\n\nPlease ensure:\n1. Backend server is running (cd backend && ./run.sh)\n2. AWS credentials are configured\n3. Vector database is initialized`,
+        response: `Error connecting to RAG backend: ${error instanceof Error ? error.message : 'Unknown error'}\n\nYour message: "${message}"\n\nPlease ensure:\n1. Backend server is running (cd backend && ./run.sh)\n2. AWS credentials are configured\n3. Vector database is initialized`,
         sources: []
       }
     }
@@ -116,7 +116,7 @@ export class ChatService {
   async uploadDocument(file: File): Promise<{ success: boolean; documentId?: string }> {
     try {
       const formData = new FormData()
-      formData.append('file', file)  // Changed from 'document' to 'file'
+      formData.append('file', file)
 
       const response = await fetch(API_ENDPOINTS.UPLOAD, {
         method: 'POST',
