@@ -1,233 +1,69 @@
-# Chatbot RAG Application
+# RAG Chatbot with Evidence Highlighting Feature
 
-A modern RAG (Retrieval-Augmented Generation) chatbot application built with React, TypeScript, and FastAPI, designed for AWS cloud deployment.
+## Overview
+In this workshop, we will build a chatbox web application with RAG functionality along with an evidence highlighting feature directly on a PDF file. We will also explore the basics of large language models, the mechanism and principles of a RAG chatbox, and the algorithm for the evidence highlighting feature.
 
-## 🏗️ Architecture
+## Key Features
 
-### Frontend
-- **React 18** with TypeScript for type safety
-- **AWS CloudScape** components for consistent UI
-- **Vite** for fast development and optimized builds
-- **PDF.js** for document viewing and highlighting
-- **Environment-based configuration** for multi-stage deployment
+- **Web UI and API Access**: Modern React interface and API endpoints for integration
+- **AWS Bedrock Integration**: Uses Claude 3.5 Sonnet for intelligent responses
+- **Document Processing**: Upload and index PDF documents for knowledge base
+- **Vector Database**: ChromaDB for efficient document retrieval
+- **PDF Highlighting**: Automatic highlighting of relevant document sections
+- **Real-time Chat**: Interactive chat interface with source references
+- **Page-specific Navigation**: Jump directly to relevant pages in source documents
 
-### Backend
-- **FastAPI** with Python for high-performance APIs
-- **ChromaDB** for vector storage and retrieval
-- **AWS Bedrock** integration for LLM and embeddings
-- **PyMuPDF** for PDF processing and page extraction
+## Architecture
+![](./public/architecture.png)
 
-### Cloud Infrastructure
-- **AWS S3** for static hosting and document storage
-- **AWS CloudFront** for global CDN
-- **AWS ECS/Fargate** for containerized backend
-- **AWS Bedrock** for AI/ML services
-- **CloudFormation** for Infrastructure as Code
-
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
-- Node.js 18+ and npm
-- Python 3.11+
-- AWS CLI configured
-- Docker (for backend deployment)
+- **Node.js** (v18 or higher)
+- **Python** (v3.11 or higher)
+- **AWS Account** with Bedrock access
+- **Docker** (for backend deployment)
 
-### Local Development
+### Deployment
 
-1. **Clone and install dependencies:**
-```bash
-git clone <repository-url>
-cd chatbot-rag
-npm install
-```
+For detailed deployment instructions including Docker setup, cloud deployment, and production configuration, please refer to our workshop: [Working with Retrieval-Augmented Generation with Evidence Highlighting Feature](https://markx04.github.io/rag-chatbot-workshop/).
 
-2. **Set up Python backend:**
-```bash
-cd backend
-pip install -r requirements.txt
-```
+The workshop covers:
+- **Theory**: LLM fundamentals and RAG principles
+- **Deployment**: Production-ready deployment strategies
 
-3. **Configure environment variables:**
-```bash
-# Copy and modify environment files
-cp .env.development.example .env.development
-cp .env.staging.example .env.staging
-cp .env.production.example .env.production
-```
+## Usage
 
-4. **Start development servers:**
-```bash
-# Frontend (runs on http://localhost:5173)
-npm run dev
+### Uploading Documents
 
-# Backend (in separate terminal)
-cd backend
-python main.py
-```
+1. Click the "📁 Upload Documents" button
+2. Select one or more PDF files
+3. Wait for processing to complete
+4. The status indicator will show "RAG Ready" when done
 
-## 🌍 Environment Configuration
+### Asking Questions
 
-The application supports multiple deployment environments with automatic configuration:
+1. Type your question in the chat input
+2. Press Enter or click "Send"
+3. The AI will respond with relevant information from your documents
+4. Click on page reference buttons to view specific document pages
 
-### Environment Files
-- `.env.development` - Local development settings
-- `.env.staging` - Staging environment settings
-- `.env.production` - Production environment settings
+### Viewing Document References
 
-### Available Variables
-```bash
-VITE_API_URL=           # Backend API URL
-VITE_ENVIRONMENT=       # Current environment (dev/staging/prod)
-VITE_AWS_REGION=        # AWS region for services
-VITE_S3_BUCKET=         # S3 bucket for documents
-VITE_DEBUG_MODE=        # Enable debug logging
-```
+- **Page Buttons**: Click to jump to specific pages in source documents
+- **PDF Viewer**: Opens on the right side when you click a page reference
+- **Highlighting**: Relevant text sections are automatically highlighted
 
-## 🏗️ Build & Deploy
-
-### Build Commands
-```bash
-# Development build
-npm run build:dev
-
-# Staging build
-npm run build:staging
-
-# Production build
-npm run build:prod
-```
-
-### AWS Deployment
-```bash
-# Deploy to staging (default)
-npm run deploy
-
-# Deploy to specific environment
-npm run deploy:dev
-npm run deploy:staging
-npm run deploy:prod
-
-# Or use the script directly
-./scripts/deploy.sh [dev|staging|prod]
-```
-
-### Manual AWS Setup
-1. **Configure AWS credentials:**
-```bash
-aws configure
-```
-
-2. **Deploy infrastructure:**
-```bash
-aws cloudformation deploy \
-  --template-file aws/cloudformation.yaml \
-  --stack-name chatbot-rag-prod \
-  --capabilities CAPABILITY_IAM
-```
-
-3. **Build and upload frontend:**
-```bash
-npm run build:prod
-aws s3 sync dist/ s3://your-bucket-name/
-```
-
-## 📁 Project Structure
-
-```
-├── src/
-│   ├── components/          # React components
-│   ├── services/           # API services
-│   ├── types/              # TypeScript definitions
-│   ├── utils/              # Utility functions
-│   └── config/             # Environment configuration
-├── backend/
-│   ├── RAG-v1/            # RAG pipeline implementation
-│   ├── main.py            # FastAPI application
-│   └── requirements.txt   # Python dependencies
-├── aws/                   # AWS CloudFormation templates
-├── scripts/               # Deployment scripts
-└── public/               # Static assets
-```
-
-## 🔧 Development
-
-### Frontend Development
-- Uses Vite proxy for API calls during development
-- Hot module replacement for fast development
-- TypeScript for type safety
-- ESLint for code quality
-
-### Backend Development
-- FastAPI with automatic OpenAPI documentation
-- Vector database integration with ChromaDB
-- AWS services integration
-- PDF processing and highlighting
-
-### Environment Management
-- Environment-specific builds and configurations
-- API endpoint abstraction for deployment flexibility
-- Feature flags for environment-specific functionality
-
-## 📚 Key Features
-
-- **Document Upload & Processing**: Support for PDF documents with text extraction
-- **Vector Search**: Semantic search using embeddings and ChromaDB
-- **PDF Highlighting**: Visual highlighting of relevant document sections
-- **Multi-Environment Support**: Seamless deployment across dev/staging/production
-- **AWS Integration**: Native AWS services integration for scalability
-- **Responsive UI**: Modern interface using AWS CloudScape components
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-1. **API Connection Errors**: Check environment variables and backend status
-2. **PDF Rendering Issues**: Ensure PDF.js CDN is accessible
-3. **Build Failures**: Verify Node.js version and dependencies
-4. **AWS Deployment Issues**: Check AWS credentials and permissions
-
-### Debug Mode
-Enable debug logging by setting `VITE_DEBUG_MODE=true` in your environment file.
-
-### Logs
-- Frontend: Browser developer console
-- Backend: FastAPI server logs
-- AWS: CloudWatch logs for deployed services
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'Add amazing feature'`
-4. Push to branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
-
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🆘 Support
+## Contributing
 
-For support and questions:
-- Create an issue in the repository
-- Check the troubleshooting section
-- Review AWS CloudFormation stack events for deployment issues
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
+
+---
