@@ -69,117 +69,15 @@ cd ..  # Back to project root
 ```bash
 npm install
 ```
-
-### 3. Running the Application
-
-You can run the application using VS Code tasks or manually:
-
-#### Option 1: Using VS Code Tasks (Recommended)
-
-1. **Start Backend Server**: Press `Cmd+Shift+P` (macOS) and select "Tasks: Run Task" → "Start Backend Server"
-2. **Start Development Server**: Press `Cmd+Shift+P` and select "Tasks: Run Task" → "Start Development Server"
-
-#### Option 2: Manual Setup
-
-**Start the Backend:**
-```bash
-cd backend
-source venv/bin/activate
-python main.py
-```
-
-The backend will start on `http://localhost:3001`
-
-**Start the Frontend:**
-In a new terminal:
-```bash
-npm run dev
-```
-
-The frontend will start on `http://localhost:5173`
-
-### 4. Initial Setup
-
-1. Open your browser and go to `http://localhost:5173`
-2. Click "📁 Upload Documents" to add PDF files to your knowledge base
-3. Wait for documents to be processed (check the status indicator)
-4. Start asking questions about your documents!
-
-## Usage
-
-### Uploading Documents
-
-1. Click the "📁 Upload Documents" button
-2. Select one or more PDF files
-3. Wait for processing to complete
-4. The status indicator will show "RAG Ready" when done
-
-### Asking Questions
-
-1. Type your question in the chat input
-2. Press Enter or click "Send"
-3. The AI will respond with relevant information from your documents
-4. Click on page reference buttons to view specific document pages
-
-### Viewing Document References
-
-- **Page Buttons**: Click to jump to specific pages in source documents
-- **PDF Viewer**: Opens on the right side when you click a page reference
-- **Highlighting**: Relevant text sections are automatically highlighted
-
-## Development
-
-### Project Structure
-
-```
-chatbot-rag/
-├── src/                           # React frontend source
-│   ├── components/                # UI components
-│   │   ├── CanvasPDFViewer.tsx   # Canvas-based PDF viewer
-│   │   ├── CloudscapeChatMessage.tsx # Chat message components
-│   │   ├── DocumentUploadModal.tsx   # Document upload interface
-│   │   ├── PDFPageSelector.tsx       # Page selection component
-│   ├── services/                  # API services
-│   │   └── chatService.ts         # Chat API integration
-│   ├── types/                     # TypeScript types
-│   │   └── index.ts              # Type definitions
-│   ├── utils/                     # Utility functions
-│   │   └── helpers.ts            # Helper functions
-│   └── assets/                    # Static assets
-├── backend/                       # Python backend
-│   ├── main.py                   # FastAPI application
-│   ├── requirements.txt          # Python dependencies
-│   ├── rag_v1/                   # RAG implementation
-│   │   ├── create_db.py         # Vector database creation
-│   │   ├── query.py             # Query processing
-│   │   ├── chroma/              # ChromaDB storage
-│   │   └── data/                # Document storage
-```
-
-### Key Technologies
-
-- **Frontend**: React 19, TypeScript, Vite, AWS Cloudscape Design
-- **Backend**: FastAPI, LangChain, ChromaDB, PyMuPDF
-- **AI/ML**: AWS Bedrock (Claude 3.5 Sonnet), Cohere Embeddings
-
-### API Endpoints
-
-- `GET /health` - Backend health check
-- `POST /api/chat` - Send chat messages
-- `POST /api/documents/upload` - Upload documents
-- `GET /api/highlighted-pdfs` - Get highlighted PDF files
-- `DELETE /api/cleanup-pdfs` - Clean up temporary files
-
-## Configuration
-
-### Available Tasks
+### 3. Configuration
+#### Available Tasks
 
 The project includes VS Code tasks for easy development:
 
 - **Start Development Server**: Runs `npm run dev` for the frontend
 - **Start Backend Server**: Activates virtual environment and runs the Python backend
 
-### Environment Variables
+#### Environment Variables
 
 Create environment files as needed:
 
@@ -207,6 +105,70 @@ VITE_API_URL=http://localhost:3001/api
 VITE_APP_NAME=RAG Chatbot
 VITE_MAX_MESSAGE_LENGTH=4000
 ```
+### 4. Running the Application
+
+You can run the application using VS Code tasks or manually:
+
+#### Option 1: Using VS Code Tasks (Recommended)
+
+1. **Start Backend Server**: Press `Cmd+Shift+P` (macOS) and select "Tasks: Run Task" → "Start Backend Server"
+2. **Start Development Server**: Press `Cmd+Shift+P` and select "Tasks: Run Task" → "Start Development Server"
+
+#### Option 2: Manual Setup
+
+**Start the Backend:**
+```bash
+cd backend
+source venv/bin/activate
+python main.py
+```
+
+The backend will start on `http://localhost:3001`
+
+#### API Endpoints
+
+- `GET /health` - Backend health check
+- `POST /api/chat` - Send chat messages
+- `POST /api/documents/upload` - Upload documents
+- `GET /api/highlighted-pdfs` - Get highlighted PDF files
+- `DELETE /api/cleanup-pdfs` - Clean up temporary files
+
+**Start the Frontend:**
+In a new terminal:
+```bash
+npm run dev
+```
+
+The frontend will start on `http://localhost:5173`
+
+### 5. Initial Setup
+
+1. Open your browser and go to `http://localhost:5173`
+2. Click "📁 Upload Documents" to add PDF files to your knowledge base
+3. Wait for documents to be processed (check the status indicator)
+4. Start asking questions about your documents!
+
+## Usage
+
+### Uploading Documents
+
+1. Click the "📁 Upload Documents" button
+2. Select one or more PDF files
+3. Wait for processing to complete
+4. The status indicator will show "RAG Ready" when done
+
+### Asking Questions
+
+1. Type your question in the chat input
+2. Press Enter or click "Send"
+3. The AI will respond with relevant information from your documents
+4. Click on page reference buttons to view specific document pages
+
+### Viewing Document References
+
+- **Page Buttons**: Click to jump to specific pages in source documents
+- **PDF Viewer**: Opens on the right side when you click a page reference
+- **Highlighting**: Relevant text sections are automatically highlighted
 
 ## Deployment
 
@@ -244,19 +206,6 @@ For complete documentation, visit our workshop: [Working with Retrieval-Augmente
    - Verify AWS credentials and region
    - Check Bedrock service availability in your region
    - Ensure your account has Bedrock access
-
-### Debug Mode
-
-Enable debug logging by setting environment variables:
-
-```bash
-# Backend debug
-export PYTHONPATH=$PYTHONPATH:./backend
-export DEBUG=1
-
-# Frontend debug
-export VITE_DEBUG=true
-```
 
 ## License
 
